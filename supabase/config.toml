@@ -1,0 +1,10 @@
+project_id = "apnfbdkerddhkkzqstmp"
+
+[functions.scribia-free-signup]
+verify_jwt = false
+
+[functions.scribia-transcribe]
+verify_jwt = false
+
+[functions.scribia-webhook-callback]
+verify_jwt = false
