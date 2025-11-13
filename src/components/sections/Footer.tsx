@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container mx-auto py-10 grid gap-6 md:grid-cols-2">
         <div>
           <h3 className="font-semibold text-lg">{SITE.name}</h3>
-          <p className="text-muted-foreground mt-2">Transcrição e resumo inteligente para congressos acadêmicos.</p>
+          <p className="text-muted-foreground mt-2">Solução de transcrição e conteúdo inteligente para eventos — de congressos acadêmicos a marketing digital, IA e qualquer tema voltado ao ensino de habilidades e profissões.</p>
         </div>
         <div className="md:justify-self-end">
           <a href={`mailto:${SITE.contactEmail}`} className="inline-flex items-center gap-2 story-link">
