@@ -1,0 +1,15 @@
+project_id = "apnfbdkerddhkkzqstmp"
+
+[functions.scribia-send-verification-email]
+verify_jwt = false
+
+[functions.scribia-upload-audio]
+verify_jwt = false
+
+[functions.scribia-transcribe]
+verify_jwt = false
+timeout = 900
+
+[functions.generate-livebook]
+verify_jwt = false
+timeout = 600

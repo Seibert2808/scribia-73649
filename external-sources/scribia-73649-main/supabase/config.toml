@@ -1,0 +1,7 @@
+project_id = "apnfbdkerddhkkzqstmp"
+
+[functions.scribia-free-signup]
+verify_jwt = false
+
+[functions.scribia-send-contact]
+verify_jwt = false
