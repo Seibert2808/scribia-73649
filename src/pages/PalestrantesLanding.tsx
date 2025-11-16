@@ -50,7 +50,10 @@ const PalestrantesLanding = () => {
         <script type="application/ld+json">{JSON.stringify(faqLd)}</script>
       </Helmet>
 
-      <main>
+      <main className="relative min-h-screen">
+        <div className="absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat" style={{backgroundImage: `url('https://raw.githubusercontent.com/Seibert2808/scribia-73649/main/src/assets/images/hero-background.svg')`}} />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/80 to-background/60" />
+        
         <div className="container mx-auto px-4 mt-4">
           <Button variant="outline" asChild>
             <a href="/">Voltar para a Home</a>
