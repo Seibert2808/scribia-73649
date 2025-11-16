@@ -22,16 +22,6 @@ const Navbar = () => {
           <img src={logoSrc} alt={`${SITE.name} logo`} className="h-8 md:h-10 w-auto" loading="eager" />
         </a>
         
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-4 lg:gap-6 text-sm text-muted-foreground">
-          <a href="#problema" className="hover:text-foreground transition-colors">Problema</a>
-          <a href="#como-funciona" className="hover:text-foreground transition-colors">Como funciona</a>
-          <a href="#beneficios" className="hover:text-foreground transition-colors">Benefícios</a>
-          <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
-          <a href="/palestrantes" className="hover:text-foreground transition-colors">Sou Palestrante</a>
-          <a href="/influenciadores" className="hover:text-foreground transition-colors">Sou Influenciador/Expert</a>
-        </div>
-        
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-2 lg:gap-3">
           <a href="/login">
@@ -52,26 +42,7 @@ const Navbar = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px]">
             <nav className="flex flex-col gap-6 mt-8">
-              <a href="#problema" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                Problema
-              </a>
-              <a href="#como-funciona" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                Como funciona
-              </a>
-              <a href="#beneficios" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                Benefícios
-              </a>
-              <a href="#faq" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                FAQ
-              </a>
-              <a href="/palestrantes" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                Sou Palestrante
-              </a>
-              <a href="/influenciadores" onClick={() => setIsOpen(false)} className="text-lg hover:text-primary transition-colors">
-                Sou Influenciador/Expert
-              </a>
-              
-              <div className="flex flex-col gap-3 pt-4 border-t">
+              <div className="flex flex-col gap-3">
                 <a href="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full">Login</Button>
                 </a>
