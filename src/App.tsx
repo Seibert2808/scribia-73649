@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OrganizadorLayout from "./components/organizador/OrganizadorLayout";
 import Navbar from "./components/sections/Navbar";
+import SimpleNavbar from "./components/sections/SimpleNavbar";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -143,7 +144,7 @@ const App = () => (
                   } />
                   <Route path="/selecionar-plano" element={
                     <>
-                      <Navbar />
+                      <SimpleNavbar />
                       <SelecionarPlano />
                     </>
                   } />
