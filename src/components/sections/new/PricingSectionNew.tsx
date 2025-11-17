@@ -17,10 +17,10 @@ const plans = [
       "3 ebooks por dia",
       "Acesso à plataforma ScribIA",
       "Biblioteca ScribIA de eventos",
-      "Ebooks compactos não personalizados"
+      "Ebooks compactos não personalizados",
     ],
     cta: "Começar Grátis",
-    featured: false
+    featured: false,
   },
   {
     name: "Plus",
@@ -32,50 +32,45 @@ const plans = [
       "Tutor IA completo",
       "Dashboard avançado",
       "Integrações com plataformas",
-      "Suporte prioritário"
+      "Suporte prioritário",
     ],
     cta: "Assinar Agora",
-    featured: true
+    featured: true,
   },
   {
     name: "Eventos, Patrocinadores e Influenciadores",
     description: "Soluções exclusivas",
     monthlyPrice: null,
     annualPrice: null,
-    features: [
-      "Ferramentas personalizadas para eventos",
-      "Suporte dedicado",
-      "Configuração conforme necessidade"
-    ],
+    features: ["Ferramentas personalizadas para eventos", "Suporte dedicado", "Configuração conforme necessidade"],
     cta: "Agende sua Sessão",
-    featured: false
-  }
+    featured: false,
+  },
 ];
 
 const PricingSectionNew = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    nome: '',
-    empresa: '',
-    email: '',
-    whatsapp: ''
+    nome: "",
+    empresa: "",
+    email: "",
+    whatsapp: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatWhatsApp = (value: string): string => {
-    const digits = value.replace(/\D/g, '');
+    const digits = value.replace(/\D/g, "");
     if (digits.length <= 2) return digits;
-    if (digits.length <= 7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-    if (digits.length <= 11) 
-      return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
-    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
   };
 
   const validateForm = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const whatsappDigits = formData.whatsapp.replace(/\D/g, '');
-    
+    const whatsappDigits = formData.whatsapp.replace(/\D/g, "");
+
     if (!formData.nome.trim()) {
       toast.error("Por favor, preencha seu nome");
       return false;
@@ -93,35 +88,32 @@ const PricingSectionNew = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const payload = {
         nome: formData.nome.trim(),
         empresa: formData.empresa.trim() || null,
         email: formData.email.trim(),
-        whatsapp: formData.whatsapp.replace(/\D/g, '')
+        whatsapp: formData.whatsapp.replace(/\D/g, ""),
       };
-      
-      const response = await fetch(
-        'https://sabrinaseibert.app.n8n.cloud/webhook/sessaoestrategica',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }
-      );
-      
-      if (!response.ok) throw new Error('Erro ao enviar');
-      
+
+      const response = await fetch("https://sabrinaseibert.app.n8n.cloud/webhook-test/sessaoestrategica", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Erro ao enviar");
+
       toast.success("Mensagem enviada com sucesso. Aguarde o contato do Setor de Planejamento do ScribIA.");
-      setFormData({ nome: '', empresa: '', email: '', whatsapp: '' });
+      setFormData({ nome: "", empresa: "", email: "", whatsapp: "" });
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Erro ao enviar:', error);
+      console.error("Erro ao enviar:", error);
       toast.error("Erro ao agendar sessão. Tente novamente.");
     } finally {
       setIsSubmitting(false);
@@ -142,26 +134,28 @@ const PricingSectionNew = () => {
             Soluções flexíveis que crescem com suas necessidades
           </p>
         </div>
-        
+
         <div className="flex items-center justify-center gap-3 mb-10">
           <span className="text-sm font-medium">Mensal</span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
-            className={`relative w-14 h-7 rounded-full transition-colors ${isAnnual ? 'bg-primary' : 'bg-muted'}`}
+            className={`relative w-14 h-7 rounded-full transition-colors ${isAnnual ? "bg-primary" : "bg-muted"}`}
           >
-            <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${isAnnual ? 'translate-x-7' : 'translate-x-0'}`} />
+            <div
+              className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform ${isAnnual ? "translate-x-7" : "translate-x-0"}`}
+            />
           </button>
           <span className="text-sm font-medium">
             Anual <small className="text-primary">(-20%)</small>
           </span>
         </div>
-        
+
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {plans.map((plan, idx) => (
-            <Card 
-              key={idx} 
+            <Card
+              key={idx}
               className={`relative hover:-translate-y-1 transition-all ${
-                plan.featured ? 'border-2 border-primary scale-105 shadow-xl' : ''
+                plan.featured ? "border-2 border-primary scale-105 shadow-xl" : ""
               }`}
             >
               {plan.featured && (
@@ -174,7 +168,7 @@ const PricingSectionNew = () => {
                   <h3 className="text-xl font-bold text-primary mb-1">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground">{plan.description}</p>
                 </div>
-                
+
                 <div className="flex items-baseline justify-center my-6">
                   {plan.monthlyPrice === null ? (
                     <span className="text-2xl font-bold text-primary">Sob Consulta</span>
@@ -187,7 +181,7 @@ const PricingSectionNew = () => {
                     </>
                   )}
                 </div>
-                
+
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3">
@@ -196,10 +190,10 @@ const PricingSectionNew = () => {
                     </li>
                   ))}
                 </ul>
-                
-                <Button 
-                  variant={plan.featured ? "cta" : "outline"} 
-                  size="lg" 
+
+                <Button
+                  variant={plan.featured ? "cta" : "outline"}
+                  size="lg"
                   className="w-full"
                   onClick={() => {
                     if (plan.cta === "Agende sua Sessão") {
@@ -218,9 +212,7 @@ const PricingSectionNew = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Quero agendar uma Sessão</DialogTitle>
-              <DialogDescription>
-                Preencha os dados abaixo para agendar sua sessão estratégica
-              </DialogDescription>
+              <DialogDescription>Preencha os dados abaixo para agendar sua sessão estratégica</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -228,7 +220,7 @@ const PricingSectionNew = () => {
                 <Input
                   id="nome"
                   value={formData.nome}
-                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   required
                   maxLength={120}
                 />
@@ -238,7 +230,7 @@ const PricingSectionNew = () => {
                 <Input
                   id="empresa"
                   value={formData.empresa}
-                  onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
                   maxLength={120}
                 />
               </div>
@@ -248,7 +240,7 @@ const PricingSectionNew = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                   maxLength={255}
                 />
@@ -259,10 +251,12 @@ const PricingSectionNew = () => {
                   id="whatsapp"
                   type="tel"
                   value={formData.whatsapp}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    whatsapp: formatWhatsApp(e.target.value)
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      whatsapp: formatWhatsApp(e.target.value),
+                    })
+                  }
                   placeholder="(11) 99999-9999"
                   required
                   maxLength={15}
