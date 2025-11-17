@@ -336,9 +336,6 @@ const OrganizadoresLanding = () => {
               viewport={{ once: true }}
               className="text-center mb-12"
             >
-              <div className="inline-flex items-center gap-2 text-primary mb-4">
-                <span className="text-4xl">🔥</span>
-              </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Por que Organizadores Inteligentes Escolhem o ScribIA?
               </h2>
