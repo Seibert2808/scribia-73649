@@ -94,19 +94,19 @@ const OrganizadoresLanding = () => {
       icon: TrendingUp,
       title: "Uma nova forma de monetizar o pós-evento",
       description:
-        "Com os Livebooks, você pode vender trilhas de conteúdo, oferecer bônus exclusivos, criar clubes de assinatura do evento, aquecer leads para produtos educacionais e criar séries temáticas para manter o público ativo. É um pós-evento lucrativo, não apenas um 'arquivo morto'.",
+        "Com os Livebooks, você pode vender trilhas de conteúdo, oferecer bônus exclusivos, criar clubes de assinatura do evento, aquecer leads para produtos educacionais correlacionados e criar séries temáticas para manter o público ativo. É um ecossistema vivo, não apenas um 'arquivo morto'.",
     },
     {
       icon: Gift,
       title: "Um presente que fortalece a marca do evento",
       description:
-        "Participantes sentem que receberam algo exclusivo e de altíssimo valor. Palestrantes se emocionam ao ver suas ideias ganhar formato profissional. Patrocinadores ganham presença inteligente no conteúdo. Resultado? Seu evento vira inesquecível.",
+        "Participantes sentem que receberam algo exclusivo e de altíssimo valor. Palestrantes curtem ver suas ideias transformadas em ação. Patrocinadores ganham presença inteligente no conteúdo. Resultado? Seu evento vira inesquecível.",
     },
     {
       icon: Zap,
       title: "Suas próximas vendas ficam muito mais fáceis",
       description:
-        "Quando as pessoas leem o Livebook na semana seguinte, comentam, compartilham e revisitam o conteúdo, elas permanecem aquecidas. Isso diminui o custo de aquisição, o esforço de remarketing e o tempo entre edições — e aumenta o interesse, o retorno e o valor da marca do evento.",
+        "Quando as pessoas leem o Livebook na semana seguinte, comentam, compartilham e revisitam o conteúdo, elas permanecem aquecidas. Isso diminui o custo de aquisição, o esforço de remarketing e o tempo entre edições, e aumenta o interesse, o retorno e o valor da marca do evento.",
     },
   ];
 
@@ -191,7 +191,7 @@ const OrganizadoresLanding = () => {
           </ul>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/login")}>
               Login
             </Button>
             <Button variant="cta" size="sm" onClick={handleCTAClick}>
@@ -200,7 +200,7 @@ const OrganizadoresLanding = () => {
           </div>
 
           <div className="flex md:hidden items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/login")}>
               Login
             </Button>
             <Button variant="cta" size="sm" onClick={handleCTAClick}>
