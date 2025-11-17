@@ -101,7 +101,7 @@ const PricingSectionNew = () => {
         whatsapp: formData.whatsapp.replace(/\D/g, ""),
       };
 
-      const response = await fetch("https://sabrinaseibert.app.n8n.cloud/webhook-test/sessaoestrategica", {
+      const response = await fetch("https://sabrinaseibert.app.n8n.cloud/webhook/sessaoestrategica", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
