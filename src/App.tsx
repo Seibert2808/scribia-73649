@@ -42,7 +42,7 @@ const OrganizadoresLanding = lazy(() => import("./pages/OrganizadoresLanding"));
 const PalestrantesLanding = lazy(() => import("./pages/PalestrantesLanding"));
 const PatrocinadoresLanding = lazy(() => import("./pages/PatrocinadoresLanding"));
 
-const CadastroOrganizador = lazy(() => import("./pages/organizador/CadastroOrganizador"));
+const CadastroOrganizador = lazy(() => import("./pages/CadastroOrganizador"));
 const CriarEvento = lazy(() => import("./pages/organizador/CriarEvento"));
 
 // Loading fallback component
