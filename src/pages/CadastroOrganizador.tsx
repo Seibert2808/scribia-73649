@@ -21,6 +21,11 @@ const CadastroOrganizador = () => {
     whatsapp: '',
     organizacao: '',
     cargo: '',
+    nome_evento: '',
+    data_inicio: '',
+    data_fim: '',
+    tipo_evento: '',
+    url_evento: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,6 +80,21 @@ const CadastroOrganizador = () => {
         });
 
       if (configError) throw configError;
+
+      // 4. Criar evento principal do organizador
+      const { error: eventoError } = await supabase
+        .from('scribia_eventos')
+        .insert({
+          usuario_id: userId,
+          nome_evento: formData.nome_evento,
+          data_inicio: formData.data_inicio || null,
+          data_fim: formData.data_fim || null,
+          tipo_evento: formData.tipo_evento || null,
+          url_evento: formData.url_evento || null,
+          status_evento: 'ativo'
+        });
+
+      if (eventoError) throw eventoError;
 
       toast.success('Conta de organizador criada com sucesso!');
       toast.info('Faça login para acessar o dashboard');
@@ -199,6 +219,65 @@ const CadastroOrganizador = () => {
                       value={formData.cargo}
                       onChange={(e) => setFormData({...formData, cargo: e.target.value})}
                       placeholder="Seu cargo na organização"
+                    />
+                  </div>
+                </div>
+
+                {/* Dados do Evento Principal */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Dados do Evento Principal</h3>
+                  
+                  <div>
+                    <Label htmlFor="nome_evento">Nome do Evento *</Label>
+                    <Input
+                      id="nome_evento"
+                      required
+                      value={formData.nome_evento}
+                      onChange={(e) => setFormData({...formData, nome_evento: e.target.value})}
+                      placeholder="Nome do seu evento"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="data_inicio">Data de Início</Label>
+                      <Input
+                        id="data_inicio"
+                        type="date"
+                        value={formData.data_inicio}
+                        onChange={(e) => setFormData({...formData, data_inicio: e.target.value})}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="data_fim">Data de Término</Label>
+                      <Input
+                        id="data_fim"
+                        type="date"
+                        value={formData.data_fim}
+                        onChange={(e) => setFormData({...formData, data_fim: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tipo_evento">Tipo de Evento</Label>
+                    <Input
+                      id="tipo_evento"
+                      value={formData.tipo_evento}
+                      onChange={(e) => setFormData({...formData, tipo_evento: e.target.value})}
+                      placeholder="Ex: Conferência, Workshop, Seminário"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="url_evento">URL do Site do Evento</Label>
+                    <Input
+                      id="url_evento"
+                      type="url"
+                      value={formData.url_evento}
+                      onChange={(e) => setFormData({...formData, url_evento: e.target.value})}
+                      placeholder="https://"
                     />
                   </div>
                 </div>
