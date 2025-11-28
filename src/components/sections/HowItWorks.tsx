@@ -1,6 +1,7 @@
 import { COPY } from "@/utils/constants";
 import { Mic, Sparkles, Mail, QrCode } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useInView } from "@/hooks/useInView";
 
 const icons = [Mic, Sparkles, Mail];
@@ -34,6 +35,13 @@ const HowItWorks = () => {
           <p className="text-lg md:text-xl font-semibold text-primary bg-primary/5 rounded-xl p-6 border border-primary/10">
             Mantenha todos os seus eventos organizados na plataforma do ScribIA e deixe que nossa Inteligência Artificial encontre suas anotações e o ajude a correlacionar as informações adquiridas.
           </p>
+          <Button 
+            onClick={() => window.location.href = '/cadastro'}
+            size="lg"
+            className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 text-lg shadow-xl hover-scale"
+          >
+            QUERO CRIAR MINHA CONTA
+          </Button>
         </div>
       </div>
     </section>
