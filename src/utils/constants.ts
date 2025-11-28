@@ -6,7 +6,7 @@ export const SITE = {
 };
 
 export const COPY = {
-  headline: "Transforme palestras em ebooks inteligentes com IA. Engaje participantes e dê vida ao conteúdo pós-evento.",
+  headline: "Não perca mais o conteúdo no pós-evento.",
   subheadline:
     "Do palco ao celular ou e-mail em poucos minutos após a palestra: receba insights, dados e referências organizados. Acesso imediato por QR Code na tela do evento.",
   ctaPrimary: "Solicitar Demonstração Gratuita",
