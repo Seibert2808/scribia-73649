@@ -16,7 +16,7 @@ export const COPY = {
     "Em eventos com múltiplas trilhas, é impossível acompanhar tudo. Anotações se perdem, insights se diluem e o valor das palestras não é aproveitado ao máximo. Ao longo do tempo esquecemos mais de 90% do que foi aprendido.",
   solutionTitle: "A solução do ScribIa",
   solutionText:
-    "Transforma áudios, transções e slides em ebooks personalizados e prontos para ação, minutos após cada palestra. O conteúdo inclui tópicos, dados, referências e as melhores citações, valorizando também o palestrante, que passa a ser lembrado e referenciado mesmo após o evento. Entregamos o que importa, no momento certo, pelo canal mais conveniente.",
+    "Transforma áudios, transcrições e slides em ebooks personalizados e prontos para ação, minutos após cada palestra. O conteúdo inclui tópicos, dados, referências e as melhores citações, valorizando também o palestrante, que passa a ser lembrado e referenciado mesmo após o evento. Entregamos o que importa, no momento certo, pelo canal mais conveniente.",
   howItWorksSteps: [
     {
       title: "Captura",
