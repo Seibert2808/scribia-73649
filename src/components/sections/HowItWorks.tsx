@@ -29,6 +29,12 @@ const HowItWorks = () => {
             );
           })}
         </div>
+        
+        <div className="mt-12 text-center max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl font-semibold text-primary bg-primary/5 rounded-xl p-6 border border-primary/10">
+            Mantenha todos os seus eventos organizados na plataforma do ScribIA e deixe que nossa Inteligência Artificial encontre suas anotações e o ajude a correlacionar as informações adquiridas.
+          </p>
+        </div>
       </div>
     </section>
   );
