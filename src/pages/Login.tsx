@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCustomAuth } from "@/hooks/useCustomAuth";
 import { toast } from "sonner";
+import { isMockProfile, mockLogin } from "@/lib/mockAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,6 +24,17 @@ export default function Login() {
     setError("");
 
     try {
+      // Check if it's a mock profile
+      if (isMockProfile(email)) {
+        const mockResult = mockLogin(email, password);
+        
+        if (mockResult.success) {
+          toast.success("Login realizado com sucesso! (Mock Mode)");
+          navigate(mockResult.dashboard);
+          return;
+        }
+      }
+
       const result = await login(email, password);
       
       if (result.success) {
@@ -82,7 +94,7 @@ export default function Login() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

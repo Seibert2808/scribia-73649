@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { getMockSession } from "@/lib/mockAuth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,10 +12,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for mock session first
+    const mockSession = getMockSession();
+    if (mockSession) {
+      return; // Allow access with mock session
+    }
+
     if (!loading && !isAuthenticated) {
       navigate("/login");
     }
   }, [isAuthenticated, loading, navigate]);
+
+  // Check for mock session
+  const mockSession = getMockSession();
+  if (mockSession) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
