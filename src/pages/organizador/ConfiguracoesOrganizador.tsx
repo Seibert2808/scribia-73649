@@ -70,6 +70,27 @@ export default function ConfiguracoesOrganizador() {
   const loadConfiguracoes = async () => {
     try {
       setLoading(true);
+      
+      // Check for mock session first
+      const mockSession = localStorage.getItem('mock_session');
+      if (mockSession) {
+        const session = JSON.parse(mockSession);
+        setUserId(session.user.id);
+        
+        // Load mock data
+        setDadosPessoais({
+          nome_completo: session.profile.nome_completo || '',
+          email_pessoal: session.profile.email || '',
+          telefone_pessoal: '',
+          data_nascimento: '',
+          cpf_pessoal: session.profile.cpf || '',
+          rg: ''
+        });
+        
+        setLoading(false);
+        return;
+      }
+
       const storedUserId = localStorage.getItem('user_id');
 
       if (!storedUserId) {
