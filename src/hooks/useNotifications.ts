@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { notificacoesApi } from '@/services/api';
 import { useCustomAuth } from './useCustomAuth';
 
 export interface Notification {
@@ -29,29 +29,16 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [user?.profile?.id]);
 
-  // Configurar realtime
+  // Polling para atualizar notificações a cada 30 segundos
   useEffect(() => {
     if (!user?.profile?.id) return;
 
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'scribia_notificacoes',
-          filter: `usuario_id=eq.${user.profile.id}`,
-        },
-        (payload) => {
-          console.log('🔔 Notificação atualizada:', payload);
-          fetchNotifications(); // Recarregar notificações quando houver mudanças
-        }
-      )
-      .subscribe();
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [user?.profile?.id]);
 
@@ -59,19 +46,11 @@ export const useNotifications = () => {
     if (!user?.profile?.id) return;
 
     try {
-      const { data, error } = await supabase.rpc('scribia_get_notifications', {
-        p_usuario_id: user.profile.id,
-        p_limit: 10
-      });
-
-      if (error) throw error;
-
-      const result = data as any;
+      const response = await notificacoesApi.list(10);
+      const data = response.data;
       
-      if (result.success) {
-        setNotifications(result.notifications || []);
-        setUnreadCount(result.unread_count || 0);
-      }
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unread_count || 0);
     } catch (error) {
       console.error('Erro ao buscar notificações:', error);
     } finally {
@@ -83,12 +62,7 @@ export const useNotifications = () => {
     if (!user?.profile?.id) return;
 
     try {
-      const { data, error } = await supabase.rpc('scribia_mark_notification_read', {
-        p_notificacao_id: notificationId,
-        p_usuario_id: user.profile.id
-      });
-
-      if (error) throw error;
+      await notificacoesApi.markAsRead(notificationId);
 
       // Atualizar localmente
       setNotifications(prev =>
@@ -106,11 +80,7 @@ export const useNotifications = () => {
     if (!user?.profile?.id) return;
 
     try {
-      const { error } = await supabase.rpc('scribia_mark_all_notifications_read', {
-        p_usuario_id: user.profile.id
-      });
-
-      if (error) throw error;
+      await notificacoesApi.markAllAsRead();
 
       // Atualizar localmente
       setNotifications(prev =>

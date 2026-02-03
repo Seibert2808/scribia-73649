@@ -48,12 +48,10 @@ const Livebooks = () => {
 
   useEffect(() => {
     if (authLoading) {
-      console.log("Auth still loading...");
       return;
     }
 
     if (!user) {
-      console.log("No user found after auth loaded");
       setLoading(false);
       return;
     }
@@ -61,13 +59,11 @@ const Livebooks = () => {
     const fetchLivebooks = async () => {
       try {
         setLoading(true);
-        console.log("Fetching livebooks for user:", user.profile.id);
         
         const response = await livebooksApi.list();
         const data = response.data;
         const livebooksData = Array.isArray(data) ? data : [];
         
-        console.log("Livebooks loaded:", livebooksData.length);
         setLivebooks(livebooksData);
       } catch (err: any) {
         console.error('Erro ao buscar livebooks:', err);

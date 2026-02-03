@@ -66,21 +66,15 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!customUser?.profile?.id) {
-      console.log('⚠️ Dashboard: Aguardando autenticação...');
       return;
     }
 
     const userId = customUser.profile.id;
-    console.log('✅ Dashboard: Usuário autenticado:', userId);
 
     const fetchStats = async () => {
       try {
-        console.log('📊 Dashboard: Buscando estatísticas via API...');
-        
         const response = await dashboardApi.getInicio();
         const statsData = response.data;
-
-        console.log('✅ Dashboard: Estatísticas carregadas:', statsData);
         
         setStats({
           totalEventos: statsData.total_eventos || 0,
@@ -91,7 +85,7 @@ const Dashboard = () => {
           livebooks_recentes: statsData.livebooks_recentes || []
         });
       } catch (error: any) {
-        console.error('❌ Dashboard: Erro ao buscar estatísticas:', error);
+        console.error('Erro ao buscar estatísticas:', error);
         toast({
           title: "Erro ao carregar estatísticas",
           description: error.response?.data?.message || "Não foi possível carregar os dados do dashboard.",

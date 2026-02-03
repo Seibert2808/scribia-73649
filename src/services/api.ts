@@ -99,3 +99,10 @@ export const relatoriosApi = {
 };
 
 export default api;
+
+// Notificações
+export const notificacoesApi = {
+  list: (limit?: number) => api.get('/notificacoes', { params: { limit } }),
+  markAsRead: (id: string) => api.put(`/notificacoes/${id}/marcar-lida`),
+  markAllAsRead: () => api.put('/notificacoes/marcar-todas-lidas'),
+};

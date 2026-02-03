@@ -13,12 +13,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      console.log('🔒 AuthGuard: Not authenticated, redirecting to login');
       navigate("/login");
-    } else if (!loading && isAuthenticated) {
-      console.log('✅ AuthGuard: User authenticated', user?.profile?.email);
     }
-  }, [isAuthenticated, loading, navigate, user]);
+  }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
     return (
