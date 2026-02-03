@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Users, 
@@ -6,53 +6,94 @@ import {
   BookOpen, 
   Download, 
   TrendingUp,
-  Award,
   Brain,
-  BarChart3
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { dashboardApi } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const OrganizadorDashboard = () => {
   const { user } = useCustomAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<any>(null);
 
-  // Mock data - em produção viria do Supabase
+  useEffect(() => {
+    if (user) {
+      fetchDashboard();
+    }
+  }, [user]);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const response = await dashboardApi.getInicio('organizador_evento');
+      setDashboardData(response.data);
+    } catch (error: any) {
+      console.error('Erro ao carregar dashboard:', error);
+      toast({
+        title: 'Erro ao carregar dashboard',
+        description: error.response?.data?.message || 'Não foi possível carregar os dados',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Não foi possível carregar os dados do dashboard</p>
+      </div>
+    );
+  }
+
   const stats = [
     { 
       title: 'Eventos Ativos', 
-      value: '1', 
+      value: String(dashboardData.estatisticas?.eventos_ativos || 0),
       icon: Calendar, 
-      change: 'SIAPARTO 2024',
+      change: `${dashboardData.estatisticas?.total_eventos || 0} total`,
       color: 'from-purple-500 to-purple-600'
     },
     { 
       title: 'Participantes Inscritos', 
-      value: '342', 
+      value: String(dashboardData.estatisticas?.total_participantes || 0),
       icon: Users, 
-      change: '+28 esta semana',
+      change: 'Total de participantes',
       color: 'from-blue-500 to-blue-600'
     },
     { 
       title: 'Palestras Confirmadas', 
-      value: '18', 
+      value: String(dashboardData.estatisticas?.total_palestras || 0),
       icon: FileText, 
-      change: '3 dias de evento',
+      change: 'Total de palestras',
       color: 'from-indigo-500 to-indigo-600'
     },
     { 
       title: 'Livebooks Disponíveis', 
-      value: '12', 
+      value: String(dashboardData.estatisticas?.total_livebooks || 0),
       icon: BookOpen, 
-      change: 'Prontos para download',
+      change: `${dashboardData.estatisticas?.livebooks_concluidos || 0} concluídos`,
       color: 'from-violet-500 to-violet-600'
     },
     { 
       title: 'Downloads Realizados', 
-      value: '89', 
+      value: String(dashboardData.estatisticas?.total_livebooks || 0),
       icon: Download, 
-      change: '+15 hoje',
+      change: 'Total de downloads',
       color: 'from-cyan-500 to-cyan-600'
     },
     { 
@@ -64,44 +105,7 @@ const OrganizadorDashboard = () => {
     }
   ];
 
-  const recentEvents = [
-    {
-      id: 1,
-      name: 'SIAPARTO - Simpósio Internacional de Assistência ao Parto',
-      date: '17-19 Out 2024',
-      participants: 342,
-      livebooks: 12,
-      status: 'Preparação final',
-      statusColor: 'bg-orange-100 text-orange-800'
-    }
-  ];
-
-  const popularLivebooks = [
-    {
-      title: 'Assistência Humanizada ao Parto',
-      author: 'Dra. Ana Beatriz Costa',
-      downloads: 45,
-      category: 'Humanização'
-    },
-    {
-      title: 'Tecnologias no Trabalho de Parto',
-      author: 'Dr. Carlos Mendes',
-      downloads: 38,
-      category: 'Tecnologia'
-    },
-    {
-      title: 'Parto Natural: Evidências Científicas',
-      author: 'Dra. Fernanda Lima',
-      downloads: 32,
-      category: 'Evidências'
-    },
-    {
-      title: 'Gestão da Dor no Parto',
-      author: 'Dr. Roberto Silva',
-      downloads: 28,
-      category: 'Analgesia'
-    }
-  ];
+  const recentEvents = dashboardData.eventos_recentes || [];
 
   return (
     <div className="space-y-8">
@@ -110,10 +114,10 @@ const OrganizadorDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">
-              SIAPARTO 2024 - São Paulo 🏥
+              Dashboard do Organizador 🏥
             </h1>
             <p className="text-purple-100 text-lg">
-              Simpósio Internacional de Assistência ao Parto • 17-19 de Outubro
+              Bem-vindo, {dashboardData.usuario?.nome || user?.profile?.nome_completo}
             </p>
             <p className="text-purple-200 text-sm mt-2">
               Acompanhe o progresso do seu evento e o engajamento dos participantes
@@ -135,7 +139,7 @@ const OrganizadorDashboard = () => {
             <Card key={index} className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-              <div className="space-y-2">
+                  <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
                     <p className="text-3xl font-bold">{stat.value}</p>
                     <p className="text-sm text-green-600 dark:text-green-400 font-medium">{stat.change}</p>
@@ -150,122 +154,59 @@ const OrganizadorDashboard = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Events */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Calendar className="h-6 w-6 text-purple-600" />
-              Eventos Recentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Recent Events */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Eventos Recentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentEvents.length > 0 ? (
             <div className="space-y-4">
-              {recentEvents.map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
+              {recentEvents.map((event: any) => (
+                <div key={event.id} className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-900">
                   <div className="flex-1">
-                    <h4 className="font-semibold mb-1">{event.name}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">{event.date}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {event.participants} participantes
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        {event.livebooks} livebooks
-                      </span>
-                    </div>
+                    <h3 className="font-semibold text-lg">{event.nome_evento}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(event.data_inicio).toLocaleDateString('pt-BR')} - {event.cidade}, {event.estado}
+                    </p>
                   </div>
-                  <Badge className={`${event.statusColor} border-0`}>
-                    {event.status}
+                  <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">
+                    {new Date(event.data_fim) >= new Date() ? 'Ativo' : 'Finalizado'}
                   </Badge>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4 border-purple-200 text-purple-700 hover:bg-purple-50">
-              Ver Todos os Eventos
-            </Button>
-          </CardContent>
-        </Card>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Nenhum evento recente</p>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Popular Livebooks */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-              Livebooks Populares
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Popular Livebooks */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Livebooks Recentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dashboardData.livebooks_recentes && dashboardData.livebooks_recentes.length > 0 ? (
             <div className="space-y-4">
-              {popularLivebooks.map((livebook, index) => (
-                <div key={index} className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                    {index + 1}
-                  </div>
+              {dashboardData.livebooks_recentes.map((livebook: any) => (
+                <div key={livebook.id} className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors">
                   <div className="flex-1">
-                    <h4 className="font-semibold mb-1">{livebook.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-1">{livebook.author}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {livebook.category}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Download className="h-3 w-3" />
-                        {livebook.downloads}
-                      </span>
-                    </div>
+                    <h3 className="font-semibold">{livebook.palestra?.titulo || 'Sem título'}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {livebook.palestra?.palestrante || 'Palestrante não informado'}
+                    </p>
                   </div>
+                  <Badge variant={livebook.status === 'concluido' ? 'default' : 'secondary'}>
+                    {livebook.status}
+                  </Badge>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4 border-blue-200 text-blue-700 hover:bg-blue-50">
-              Ver Todos os Livebooks
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Event Performance Analytics */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <BarChart3 className="h-6 w-6 text-emerald-600" />
-            Análise de Desempenho - SIAPARTO 2024
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="font-semibold">Taxa de Conversão</h4>
-              <p className="text-foreground/80">
-                <strong>89% dos inscritos</strong> confirmaram presença, superando a meta de 85% 
-                estabelecida para o evento.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold">Engajamento com Conteúdo</h4>
-              <p className="text-foreground/80">
-                <strong>67% dos participantes</strong> já baixaram pelo menos um livebook, 
-                indicando alto interesse no material disponibilizado.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold">Distribuição Geográfica</h4>
-              <p className="text-foreground/80">
-                Participantes de <strong>12 estados brasileiros</strong>, com maior concentração 
-                em São Paulo (45%) e Rio de Janeiro (18%).
-              </p>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold">Feedback Preliminar</h4>
-              <p className="text-foreground/80">
-                Avaliação média de <strong>4.8/5.0</strong> nas pesquisas de expectativa, 
-                com destaque para a qualidade dos palestrantes.
-              </p>
-            </div>
-          </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Nenhum livebook recente</p>
+          )}
         </CardContent>
       </Card>
     </div>

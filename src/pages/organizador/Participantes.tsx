@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Search, 
-  Filter, 
   Download, 
-  Mail, 
-  Phone,
   Calendar,
   BookOpen,
   TrendingUp,
@@ -13,12 +10,11 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { participantesApi, eventosApi } from '@/services/api';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface Participante {
@@ -31,7 +27,7 @@ interface Participante {
 }
 
 const Participantes = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [eventoFilter, setEventoFilter] = useState('todos');
@@ -49,129 +45,26 @@ const Participantes = () => {
     try {
       setLoading(true);
 
-      // Buscar eventos do organizador
-      const { data: eventosData } = await supabase
-        .from('scribia_eventos')
-        .select('id, nome_evento')
-        .eq('usuario_id', user!.id);
+      const [participantesRes, eventosRes] = await Promise.all([
+        participantesApi.list(),
+        eventosApi.list()
+      ]);
 
-      setEventos((eventosData || []).map(e => ({ id: e.id, nome: e.nome_evento })));
+      const participantesData = participantesRes.data || [];
+      const eventosData = eventosRes.data || [];
 
-      const eventoIds = (eventosData || []).map(e => e.id);
-
-      if (eventoIds.length === 0) {
-        setParticipantes([]);
-        setLoading(false);
-        return;
-      }
-
-      // Buscar palestras dos eventos
-      const { data: palestrasData } = await supabase
-        .from('scribia_palestras')
-        .select('id, evento_id, usuario_id')
-        .in('evento_id', eventoIds);
-
-      const palestraIds = (palestrasData || []).map(p => p.id);
-
-      if (palestraIds.length === 0) {
-        setParticipantes([]);
-        setLoading(false);
-        return;
-      }
-
-      // Buscar livebooks com informações do usuário
-      const { data: livebooksData } = await supabase
-        .from('scribia_livebooks')
-        .select(`
-          usuario_id,
-          criado_em,
-          palestra_id,
-          scribia_palestras!inner (
-            evento_id,
-            scribia_eventos!inner (
-              nome_evento
-            )
-          )
-        `)
-        .in('palestra_id', palestraIds);
-
-      // Agrupar por usuário
-      const participantesMap = new Map<string, any>();
-
-      for (const livebook of (livebooksData || [])) {
-        const userId = livebook.usuario_id;
-        
-        if (!participantesMap.has(userId)) {
-          // Buscar dados do usuário
-          const { data: userData } = await supabase
-            .from('scribia_usuarios')
-            .select('nome_completo, email')
-            .eq('id', userId)
-            .single();
-
-          if (userData) {
-            participantesMap.set(userId, {
-              id: userId,
-              nome: userData.nome_completo,
-              email: userData.email,
-              evento: (livebook as any).scribia_palestras.scribia_eventos.nome_evento,
-              livebooks_gerados: 0,
-              ultima_atividade: livebook.criado_em,
-            });
-          }
-        }
-
-        const participante = participantesMap.get(userId);
-        if (participante) {
-          participante.livebooks_gerados++;
-          if (new Date(livebook.criado_em) > new Date(participante.ultima_atividade)) {
-            participante.ultima_atividade = livebook.criado_em;
-          }
-        }
-      }
-
-      setParticipantes(Array.from(participantesMap.values()));
+      setEventos(eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })));
+      setParticipantes(participantesData);
     } catch (error: any) {
       console.error('Erro ao buscar participantes:', error);
       toast({
         title: 'Erro ao carregar participantes',
-        description: error.message,
+        description: error.response?.data?.message || 'Não foi possível carregar os participantes',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  };
-
-
-  const getPerfilColor = (perfil: string) => {
-    switch (perfil) {
-      case 'junior':
-        return 'bg-green-100 text-green-800';
-      case 'pleno':
-        return 'bg-blue-100 text-blue-800';
-      case 'senior':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPerfilLabel = (perfil: string) => {
-    switch (perfil) {
-      case 'junior':
-        return 'Júnior';
-      case 'pleno':
-        return 'Pleno';
-      case 'senior':
-        return 'Sênior';
-      default:
-        return perfil;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    return status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
   const filteredParticipantes = participantes.filter(participante => {
@@ -181,7 +74,6 @@ const Participantes = () => {
     return matchesSearch && matchesEvento;
   });
 
-  // Estatísticas
   const totalParticipantes = participantes.length;
   const totalLivebooks = participantes.reduce((sum, p) => sum + p.livebooks_gerados, 0);
   const mediaLivebooks = totalParticipantes > 0 ? Math.round(totalLivebooks / totalParticipantes) : 0;

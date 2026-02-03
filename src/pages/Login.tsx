@@ -25,29 +25,60 @@ export default function Login() {
     try {
       const result = await login(email, password);
       
+      console.log('Login result:', result);
+      
       if (result.success) {
+        console.log('✅ Login success!');
         toast.success("Login realizado com sucesso!");
         
-        // Redirecionar baseado no role do usuário
+        // Aguardar um pouco para garantir que o estado foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('🔍 Checking roles...', result.user?.roles);
+        
+        // Redirecionar baseado no role do usuário (PRIORIDADE)
         if (result.user?.roles && result.user.roles.length > 0) {
           const userRole = result.user.roles[0];
           
+          console.log('👤 User role:', userRole);
+          
+          // Role tem prioridade sobre needsProfile
           if (userRole === 'organizador_evento') {
-            navigate("/organizador/eventos");
-          } else if (result.needsProfile) {
-            navigate("/definir-perfil");
+            console.log('🚀 Navigating to /organizador/eventos...');
+            window.location.href = '/organizador/eventos';
+            console.log('✅ Navigate called!');
+            return; // Importante: sair da função
+          } else if (userRole === 'patrocinador_evento') {
+            console.log('🚀 Navigating to /dashboard/patrocinador...');
+            window.location.href = '/dashboard/patrocinador';
+            return;
+          } else if (userRole === 'palestrante_influencer') {
+            console.log('🚀 Navigating to /dashboard/palestrante...');
+            window.location.href = '/dashboard/palestrante';
+            return;
           } else {
-            navigate("/dashboard");
+            console.log('🚀 Navigating to /dashboard...');
+            window.location.href = '/dashboard';
+            return;
           }
-        } else if (result.needsProfile) {
-          navigate("/definir-perfil");
+        }
+        
+        console.log('⚠️ No roles found, checking needsProfile...');
+        
+        // Só chega aqui se não tiver role
+        if (result.needsProfile) {
+          console.log('🚀 Navigating to /definir-perfil...');
+          navigate("/definir-perfil", { replace: true });
         } else {
-          navigate("/dashboard");
+          console.log('🚀 Navigating to /dashboard (fallback)...');
+          navigate("/dashboard", { replace: true });
         }
       } else {
+        console.log('❌ Login failed:', result.error);
         setError(result.error || "Erro ao fazer login");
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError("Erro interno do servidor");
     } finally {
       setLoading(false);

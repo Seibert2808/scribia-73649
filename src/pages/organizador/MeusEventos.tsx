@@ -1,28 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  BookOpen, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2,
-  Filter,
-  Search,
-  Play,
-  Clock,
-  CheckCircle,
-  Mic,
-  Loader2
+  Calendar, MapPin, Users, BookOpen, Plus, Eye, Edit, Trash2, Filter, Search, Play, Clock, CheckCircle, Mic, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { eventosApi } from '@/services/api';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,7 +26,7 @@ interface Evento {
 }
 
 const MeusEventos = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,79 +43,65 @@ const MeusEventos = () => {
   const fetchEventos = async () => {
     try {
       setLoading(true);
-      
-      // Buscar eventos
-      const { data: eventosData, error: eventosError } = await supabase
-        .from('scribia_eventos')
-        .select('*')
-        .eq('usuario_id', user!.id)
-        .order('data_inicio', { ascending: false });
+      const response = await eventosApi.list();
+      const eventosData = response.data;
 
-      if (eventosError) throw eventosError;
-
-      // Para cada evento, buscar estatísticas
       const eventosComStats = await Promise.all(
-        (eventosData || []).map(async (evento) => {
-          // Contar palestras
-          const { count: palestrasCount } = await supabase
-            .from('scribia_palestras')
-            .select('*', { count: 'exact', head: true })
-            .eq('evento_id', evento.id);
-
-          // Contar livebooks através das palestras
-          const { data: palestras } = await supabase
-            .from('scribia_palestras')
-            .select('id')
-            .eq('evento_id', evento.id);
-
-          const palestraIds = (palestras || []).map(p => p.id);
-          
-          let livebooksCount = 0;
-          let participantesCount = 0;
-
-          if (palestraIds.length > 0) {
-            const { count: lbCount } = await supabase
-              .from('scribia_livebooks')
-              .select('*', { count: 'exact', head: true })
-              .in('palestra_id', palestraIds);
-
-            livebooksCount = lbCount || 0;
-
-            // Contar participantes únicos (usuários que geraram livebooks)
-            const { data: livebooks } = await supabase
-              .from('scribia_livebooks')
-              .select('usuario_id')
-              .in('palestra_id', palestraIds);
-
-            const uniqueUsers = new Set((livebooks || []).map(lb => lb.usuario_id));
-            participantesCount = uniqueUsers.size;
+        (eventosData || []).map(async (evento: any) => {
+          try {
+            const statsResponse = await eventosApi.getEstatisticas(evento.id);
+            const stats = statsResponse.data;
+            
+            const now = new Date();
+            const dataInicio = new Date(evento.data_inicio);
+            const dataFim = new Date(evento.data_fim);
+            
+            let status = 'Agendado';
+            if (now >= dataInicio && now <= dataFim) {
+              status = 'Em andamento';
+            } else if (now > dataFim) {
+              status = 'Concluído';
+            }
+            
+            return {
+              id: evento.id,
+              nome_evento: evento.nome_evento,
+              data_inicio: evento.data_inicio,
+              data_fim: evento.data_fim,
+              cidade: evento.cidade || '',
+              estado: evento.estado || '',
+              pais: evento.pais || 'Brasil',
+              status,
+              participantes: stats.participantes_unicos || 0,
+              livebooks: stats.total_livebooks || 0,
+              palestras: stats.total_palestras || 0,
+            };
+          } catch (error) {
+            const now = new Date();
+            const dataInicio = new Date(evento.data_inicio);
+            const dataFim = new Date(evento.data_fim);
+            
+            let status = 'Agendado';
+            if (now >= dataInicio && now <= dataFim) {
+              status = 'Em andamento';
+            } else if (now > dataFim) {
+              status = 'Concluído';
+            }
+            
+            return {
+              id: evento.id,
+              nome_evento: evento.nome_evento,
+              data_inicio: evento.data_inicio,
+              data_fim: evento.data_fim,
+              cidade: evento.cidade || '',
+              estado: evento.estado || '',
+              pais: evento.pais || 'Brasil',
+              status,
+              participantes: 0,
+              livebooks: 0,
+              palestras: 0,
+            };
           }
-
-          // Determinar status baseado na data
-          const now = new Date();
-          const dataInicio = new Date(evento.data_inicio);
-          const dataFim = evento.data_fim ? new Date(evento.data_fim) : dataInicio;
-          
-          let status = 'Agendado';
-          if (now >= dataInicio && now <= dataFim) {
-            status = 'Em andamento';
-          } else if (now > dataFim) {
-            status = 'Concluído';
-          }
-
-          return {
-            id: evento.id,
-            nome_evento: evento.nome_evento,
-            data_inicio: evento.data_inicio,
-            data_fim: evento.data_fim || evento.data_inicio,
-            cidade: evento.cidade || '',
-            estado: evento.estado || '',
-            pais: evento.pais || 'Brasil',
-            status,
-            participantes: participantesCount,
-            livebooks: livebooksCount,
-            palestras: palestrasCount || 0,
-          };
         })
       );
 
@@ -139,65 +110,13 @@ const MeusEventos = () => {
       console.error('Erro ao buscar eventos:', error);
       toast({
         title: 'Erro ao carregar eventos',
-        description: error.message,
+        description: error.response?.data?.message || 'Não foi possível carregar os eventos',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
-
-  // Mock data substituído por dados reais acima
-  const mockEventos = [
-    {
-      id: 1,
-      nome: 'Congresso de Obstetrícia 2024',
-      periodo: '15-17 Mar 2024',
-      local: 'São Paulo, SP, Brasil',
-      status: 'Em andamento',
-      participantes: 245,
-      livebooks: 89,
-      palestras: 12,
-      statusColor: 'bg-green-100 text-green-800 border-green-200',
-      statusIcon: '🟢'
-    },
-    {
-      id: 2,
-      nome: 'Simpósio de Medicina Fetal',
-      periodo: '22-24 Mar 2024',
-      local: 'Rio de Janeiro, RJ, Brasil',
-      status: 'Agendado',
-      participantes: 180,
-      livebooks: 0,
-      palestras: 8,
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-200',
-      statusIcon: '🔵'
-    },
-    {
-      id: 3,
-      nome: 'Workshop de Ultrassonografia',
-      periodo: '10-12 Mar 2024',
-      local: 'Belo Horizonte, MG, Brasil',
-      status: 'Concluído',
-      participantes: 95,
-      livebooks: 34,
-      palestras: 6,
-      statusColor: 'bg-gray-100 text-gray-800 border-gray-200',
-      statusIcon: '⚪'
-    },
-    {
-      id: 4,
-      nome: 'Curso de Parto Humanizado',
-      periodo: '28-30 Mar 2024',
-      local: 'Brasília, DF, Brasil',
-      status: 'Agendado',
-      participantes: 120,
-      livebooks: 0,
-      palestras: 10,
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-200',
-      statusIcon: '🔵'
-    }
-  ];
 
   const filteredEventos = eventos.filter(evento => {
     const local = `${evento.cidade}, ${evento.estado}, ${evento.pais}`;
@@ -270,7 +189,7 @@ const MeusEventos = () => {
             </p>
           </div>
           <Button 
-            onClick={() => navigate('/dashboard/eventos')}
+            onClick={() => navigate('/organizador/criar-evento')}
             className="bg-white text-purple-600 hover:bg-purple-50 font-semibold px-6 py-3"
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -389,101 +308,117 @@ const MeusEventos = () => {
 
       {/* Events Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredEventos.map((evento) => (
-          <Card key={evento.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <CardContent className="p-6">
-              <div className="space-y-4">
+        {filteredEventos.length === 0 ? (
+          <Card className="col-span-full border-0 shadow-lg">
+            <CardContent className="p-12 text-center">
+              <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Nenhum evento encontrado</h3>
+              <p className="text-gray-500 mb-6">
+                {searchTerm || statusFilter !== 'todos' 
+                  ? 'Tente ajustar os filtros de busca'
+                  : 'Comece criando seu primeiro evento'}
+              </p>
+              {!searchTerm && statusFilter === 'todos' && (
+                <Button 
+                  onClick={() => navigate('/organizador/criar-evento')}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeiro Evento
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          filteredEventos.map((evento) => (
+            <Card key={evento.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">{evento.nome_evento}</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                    <CardTitle className="text-xl mb-2">{evento.nome_evento}</CardTitle>
+                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        <span className="text-sm">{formatPeriodo(evento.data_inicio, evento.data_fim)}</span>
+                        <span>{formatPeriodo(evento.data_inicio, evento.data_fim)}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span className="text-sm">{evento.cidade}, {evento.estado}, {evento.pais}</span>
+                        <span>{evento.cidade}, {evento.estado}, {evento.pais}</span>
                       </div>
                     </div>
                   </div>
-                  <Badge className={`${getStatusColor(evento.status)} font-medium px-3 py-1`}>
+                  <Badge className={getStatusColor(evento.status)}>
                     {getStatusIcon(evento.status)} {evento.status}
                   </Badge>
                 </div>
-
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg mb-2 mx-auto">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{evento.participantes}</p>
-                    <p className="text-xs text-gray-500">Participantes</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <Users className="h-5 w-5 text-blue-600 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-blue-600">{evento.participantes}</p>
+                    <p className="text-xs text-gray-600">Participantes</p>
                   </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg mb-2 mx-auto">
-                      <BookOpen className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{evento.livebooks}</p>
-                    <p className="text-xs text-gray-500">Livebooks</p>
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <BookOpen className="h-5 w-5 text-purple-600 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-purple-600">{evento.livebooks}</p>
+                    <p className="text-xs text-gray-600">Livebooks</p>
                   </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mb-2 mx-auto">
-                      <Mic className="h-5 w-5 text-green-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{evento.palestras}</p>
-                    <p className="text-xs text-gray-500">Palestras</p>
+                  <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                    <Mic className="h-5 w-5 text-indigo-600 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-indigo-600">{evento.palestras}</p>
+                    <p className="text-xs text-gray-600">Palestras</p>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-4">
+                <div className="flex gap-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="flex-1 border-purple-200 text-purple-700 hover:bg-purple-50"
-                    onClick={() => navigate(`/dashboard/eventos/${evento.id}/palestras`)}
+                    onClick={() => navigate(`/organizador/dashboard/${evento.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Ver Palestras
+                    Ver Detalhes
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
-                    onClick={() => navigate('/dashboard/eventos')}
+                    size="sm"
+                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Editar
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-red-200 text-red-700 hover:bg-red-50"
+                    onClick={async () => {
+                      if (confirm('Tem certeza que deseja excluir este evento?')) {
+                        try {
+                          await eventosApi.delete(evento.id);
+                          toast({
+                            title: 'Evento excluído',
+                            description: 'O evento foi excluído com sucesso',
+                          });
+                          fetchEventos();
+                        } catch (error: any) {
+                          toast({
+                            title: 'Erro ao excluir evento',
+                            description: error.response?.data?.message || 'Não foi possível excluir o evento',
+                            variant: 'destructive',
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
-
-      {filteredEventos.length === 0 && (
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum evento encontrado</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm || statusFilter !== 'todos' 
-                ? 'Tente ajustar os filtros de busca.' 
-                : 'Comece criando seu primeiro evento.'}
-            </p>
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700"
-              onClick={() => navigate('/dashboard/eventos')}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeiro Evento
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

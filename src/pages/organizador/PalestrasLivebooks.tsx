@@ -3,10 +3,8 @@ import {
   Presentation, 
   BookOpen, 
   Download, 
-  Search, 
-  Filter,
+  Search,
   TrendingUp,
-  Users,
   Calendar,
   Eye,
   Trash2,
@@ -19,8 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { livebooksApi, eventosApi } from '@/services/api';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface Palestra {
@@ -34,7 +32,7 @@ interface Palestra {
 }
 
 const PalestrasLivebooks = () => {
-  const { user } = useAuth();
+  const { user } = useCustomAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [eventoFilter, setEventoFilter] = useState('todos');
@@ -52,90 +50,48 @@ const PalestrasLivebooks = () => {
     try {
       setLoading(true);
 
-      // Buscar eventos do organizador
-      const { data: eventosData } = await supabase
-        .from('scribia_eventos')
-        .select('id, nome_evento')
-        .eq('usuario_id', user!.id);
+      const [livebooksRes, eventosRes] = await Promise.all([
+        livebooksApi.list(),
+        eventosApi.list()
+      ]);
 
-      setEventos((eventosData || []).map(e => ({ id: e.id, nome: e.nome_evento })));
+      const livebooksData = livebooksRes.data || [];
+      const eventosData = eventosRes.data || [];
 
-      // Buscar palestras com evento e contagem de livebooks
-      const { data: palestrasData } = await supabase
-        .from('scribia_palestras')
-        .select(`
-          id,
-          titulo,
-          palestrante,
-          criado_em,
-          tags_tema,
-          scribia_eventos!inner (
-            nome_evento,
-            usuario_id
-          )
-        `)
-        .eq('scribia_eventos.usuario_id', user!.id)
-        .order('criado_em', { ascending: false });
+      setEventos(eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })));
 
-      // Contar livebooks por palestra
-      const palestrasComStats = await Promise.all(
-        (palestrasData || []).map(async (palestra: any) => {
-          const { count } = await supabase
-            .from('scribia_livebooks')
-            .select('*', { count: 'exact', head: true })
-            .eq('palestra_id', palestra.id);
+      // Agrupar livebooks por palestra
+      const palestrasMap = new Map<string, Palestra>();
+      
+      livebooksData.forEach((livebook: any) => {
+        const palestraId = livebook.palestra_id;
+        
+        if (!palestrasMap.has(palestraId)) {
+          palestrasMap.set(palestraId, {
+            id: palestraId,
+            titulo: livebook.titulo_palestra || 'Sem título',
+            palestrante: livebook.palestrante || 'Não informado',
+            evento_nome: livebook.evento_nome || 'Sem evento',
+            livebooks_gerados: 0,
+            data_palestra: livebook.criado_em,
+            tags_tema: livebook.tags_tema || [],
+          });
+        }
+        
+        const palestra = palestrasMap.get(palestraId)!;
+        palestra.livebooks_gerados++;
+      });
 
-          return {
-            id: palestra.id,
-            titulo: palestra.titulo,
-            palestrante: palestra.palestrante || 'Não informado',
-            evento_nome: palestra.scribia_eventos.nome_evento,
-            livebooks_gerados: count || 0,
-            data_palestra: palestra.criado_em,
-            tags_tema: palestra.tags_tema || [],
-          };
-        })
-      );
-
-      setPalestras(palestrasComStats);
+      setPalestras(Array.from(palestrasMap.values()));
     } catch (error: any) {
       console.error('Erro ao buscar dados:', error);
       toast({
         title: 'Erro ao carregar dados',
-        description: error.message,
+        description: error.response?.data?.message || 'Não foi possível carregar os dados',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-
-  const categorias = Array.from(new Set(palestras.flatMap(p => p.tags_tema)));
-
-  const getPerfilColor = (perfil: string) => {
-    switch (perfil) {
-      case 'junior':
-        return 'bg-green-100 text-green-800';
-      case 'pleno':
-        return 'bg-blue-100 text-blue-800';
-      case 'senior':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPerfilLabel = (perfil: string) => {
-    switch (perfil) {
-      case 'junior':
-        return 'Júnior Compacto';
-      case 'pleno':
-        return 'Pleno Detalhado';
-      case 'senior':
-        return 'Sênior Executivo';
-      default:
-        return perfil;
     }
   };
 
@@ -146,12 +102,10 @@ const PalestrasLivebooks = () => {
     return matchesSearch && matchesEvento;
   });
 
-  // Estatísticas
   const totalPalestras = palestras.length;
   const totalLivebooks = palestras.reduce((sum, p) => sum + p.livebooks_gerados, 0);
   const mediaPorPalestra = totalPalestras > 0 ? Math.round(totalLivebooks / totalPalestras) : 0;
 
-  // Top 3 palestras
   const topPalestras = [...palestras]
     .sort((a, b) => b.livebooks_gerados - a.livebooks_gerados)
     .slice(0, 3);
@@ -223,46 +177,48 @@ const PalestrasLivebooks = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{topPalestras[0]?.livebooks_gerados}</div>
+            <div className="text-2xl font-bold text-orange-600">{topPalestras[0]?.livebooks_gerados || 0}</div>
             <p className="text-xs text-muted-foreground truncate">
-              {topPalestras[0]?.titulo.substring(0, 30)}...
+              {topPalestras[0]?.titulo.substring(0, 30) || 'N/A'}...
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Top 3 Palestras */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Top 3 Palestras Mais Acessadas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {topPalestras.map((palestra, index) => (
-              <div key={palestra.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
-                  }`}>
-                    {index + 1}
+      {topPalestras.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Top 3 Palestras Mais Acessadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {topPalestras.map((palestra, index) => (
+                <div key={palestra.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                      index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'
+                    }`}>
+                      {index + 1}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">{palestra.titulo}</h4>
+                    <p className="text-sm text-gray-600">por {palestra.palestrante}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-purple-600">{palestra.livebooks_gerados}</div>
+                    <p className="text-xs text-gray-500">Livebooks</p>
                   </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-medium">{palestra.titulo}</h4>
-                  <p className="text-sm text-gray-600">por {palestra.palestrante}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-purple-600">{palestra.livebooks_gerados}</div>
-                  <p className="text-xs text-gray-500">Livebooks</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtros */}
       <Card>
@@ -283,7 +239,7 @@ const PalestrasLivebooks = () => {
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Filtrar por evento" />
               </SelectTrigger>
-                  <SelectContent>
+              <SelectContent>
                 <SelectItem value="todos">Todos os Eventos</SelectItem>
                 {eventos.map(evento => (
                   <SelectItem key={evento.id} value={evento.nome}>{evento.nome}</SelectItem>

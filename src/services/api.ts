@@ -1,0 +1,101 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+
+// Criar instância do axios com configuração base
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor para adicionar token em todas as requisições
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interceptor para tratar erros
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth
+export const authApi = {
+  login: (email: string, password: string) => 
+    api.post('/auth/login', { email, password }),
+  register: (data: any) => 
+    api.post('/auth/register', data),
+  logout: () => 
+    api.post('/auth/logout'),
+};
+
+// Dashboard
+export const dashboardApi = {
+  getInicio: (perfil?: string) => 
+    api.get('/dashboard/inicio', { params: { perfil } }),
+};
+
+// Eventos
+export const eventosApi = {
+  list: () => api.get('/eventos'),
+  get: (id: string) => api.get(`/eventos/${id}`),
+  create: (data: any) => api.post('/eventos', data),
+  update: (id: string, data: any) => api.put(`/eventos/${id}`, data),
+  delete: (id: string) => api.delete(`/eventos/${id}`),
+  getEstatisticas: (id: string) => api.get(`/eventos/${id}/estatisticas`),
+};
+
+// Livebooks
+export const livebooksApi = {
+  list: () => api.get('/livebooks'),
+  get: (id: string) => api.get(`/livebooks/${id}`),
+  create: (data: any) => api.post('/livebooks', data),
+  getOpcoes: (palestraId: string) => api.get(`/livebooks/palestra/${palestraId}/opcoes`),
+  getDownloadUrl: (id: string, formato: string) => api.get(`/livebooks/${id}/download/${formato}`),
+};
+
+// Configurações
+export const configuracoesApi = {
+  get: () => api.get('/configuracoes'),
+  updatePerfil: (data: any) => api.put('/configuracoes/perfil', data),
+  updatePreferencias: (data: any) => api.put('/configuracoes/preferencias', data),
+  updateNotificacoes: (data: any) => api.put('/configuracoes/notificacoes', data),
+  getOrganizador: () => api.get('/configuracoes/organizador'),
+  updateOrganizador: (data: any) => api.put('/configuracoes/organizador', data),
+};
+
+// Participantes (organizador)
+export const participantesApi = {
+  list: (eventoId?: string) => api.get('/participantes', { params: { evento_id: eventoId } }),
+  getEstatisticas: () => api.get('/participantes/estatisticas'),
+};
+
+// Rankings (organizador)
+export const rankingsApi = {
+  getPalestras: (eventoId?: string, limit?: number) => 
+    api.get('/rankings/palestras', { params: { evento_id: eventoId, limit } }),
+  getTemas: (eventoId?: string) => 
+    api.get('/rankings/temas', { params: { evento_id: eventoId } }),
+  getInsights: () => api.get('/rankings/insights'),
+};
+
+// Relatórios (organizador)
+export const relatoriosApi = {
+  getExecutivo: (params?: any) => api.get('/relatorios/executivo', { params }),
+  getMetricas: () => api.get('/relatorios/metricas'),
+  gerar: (filtros: any) => api.post('/relatorios/gerar', filtros),
+};
+
+export default api;

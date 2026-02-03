@@ -1,20 +1,24 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useCustomAuth } from "@/hooks/useCustomAuth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, loading } = useCustomAuth();
   const navigate = useNavigate();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
+      console.log('🔒 AuthGuard: Not authenticated, redirecting to login');
       navigate("/login");
+    } else if (!loading && isAuthenticated) {
+      console.log('✅ AuthGuard: User authenticated', user?.profile?.email);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, user]);
 
   if (loading) {
     return (

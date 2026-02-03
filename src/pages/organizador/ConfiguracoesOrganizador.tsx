@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { configuracoesApi } from '@/services/api';
+import { useCustomAuth } from '@/hooks/useCustomAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function ConfiguracoesOrganizador() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useCustomAuth();
   const { toast } = useToast();
 
   // DADOS PESSOAIS
@@ -62,36 +63,23 @@ export default function ConfiguracoesOrganizador() {
     compartilhar_dados_anonimos: false
   });
 
-  // CARREGAR DADOS DO SUPABASE AO MONTAR
+  // CARREGAR DADOS DO BACKEND AO MONTAR
   useEffect(() => {
-    loadConfiguracoes();
-  }, []);
+    if (user) {
+      loadConfiguracoes();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const loadConfiguracoes = async () => {
     try {
       setLoading(true);
-      const storedUserId = localStorage.getItem('user_id');
 
-      if (!storedUserId) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUserId(storedUserId);
-
-      // Buscar configurações do banco
-      const { data, error } = await supabase
-        .from('scribia_configuracoes_organizador')
-        .select('*')
-        .eq('usuario_id', storedUserId)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
+      const response = await configuracoesApi.get();
+      const data = response.data;
 
       if (data) {
-        // Carregar dados existentes
         setDadosPessoais({
           nome_completo: data.nome_completo || '',
           email_pessoal: data.email_pessoal || '',
@@ -138,37 +126,32 @@ export default function ConfiguracoesOrganizador() {
       }
     } catch (error: any) {
       console.error('Erro ao carregar configurações:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar as configurações.',
-        variant: 'destructive'
-      });
+      // Não mostrar erro se for 404 (configurações ainda não criadas)
+      if (error.response?.status !== 404) {
+        toast({
+          title: 'Erro',
+          description: error.response?.data?.message || 'Não foi possível carregar as configurações.',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveAll = async () => {
-    if (!userId) return;
+    if (!user) return;
 
     try {
       setSaving(true);
 
-      console.log('DEBUG - Dados a salvar:', {
-        usuario_id: userId,
-        nome_completo: dadosPessoais.nome_completo
-      });
-
       const dadosCompletos = {
-        usuario_id: userId,
-        // Pessoais
         nome_completo: dadosPessoais.nome_completo,
         email_pessoal: dadosPessoais.email_pessoal,
         telefone_pessoal: dadosPessoais.telefone_pessoal,
         data_nascimento: dadosPessoais.data_nascimento || null,
         cpf_pessoal: dadosPessoais.cpf_pessoal,
         rg: dadosPessoais.rg,
-        // Empresariais
         nome_empresa: dadosEmpresariais.nome_empresa,
         cnpj: dadosEmpresariais.cnpj,
         inscricao_estadual: dadosEmpresariais.inscricao_estadual,
@@ -184,7 +167,6 @@ export default function ConfiguracoesOrganizador() {
         email_comercial: dadosEmpresariais.email_comercial,
         website: dadosEmpresariais.website,
         logo_url: dadosEmpresariais.logo_url,
-        // Bancários
         banco: dadosBancarios.banco,
         agencia: dadosBancarios.agencia,
         conta: dadosBancarios.conta,
@@ -192,55 +174,25 @@ export default function ConfiguracoesOrganizador() {
         titular: dadosBancarios.titular,
         cpf_titular: dadosBancarios.cpf_titular,
         pix: dadosBancarios.pix,
-        // Configurações
         notificacoes_email: configuracoes.notificacoes_email,
         notificacoes_whatsapp: configuracoes.notificacoes_whatsapp,
         relatorios_automaticos: configuracoes.relatorios_automaticos,
-        compartilhar_dados_anonimos: configuracoes.compartilhar_dados_anonimos,
-        atualizado_em: new Date().toISOString()
+        compartilhar_dados_anonimos: configuracoes.compartilhar_dados_anonimos
       };
 
-      console.log('DEBUG - Iniciando UPDATE...');
-
-      // Tentar UPDATE primeiro
-      const { data: updateData, error: updateError } = await supabase
-        .from('scribia_configuracoes_organizador')
-        .update(dadosCompletos)
-        .eq('usuario_id', userId)
-        .select();
-
-      console.log('DEBUG - Resultado UPDATE:', { data: updateData, error: updateError });
-
-      // Se não encontrou registro (erro 0 rows), fazer INSERT
-      if (updateError && updateError.code === 'PGRST116') {
-        console.log('DEBUG - Record não encontrado, fazendo INSERT...');
-        
-        const { data: insertData, error: insertError } = await supabase
-          .from('scribia_configuracoes_organizador')
-          .insert([dadosCompletos])
-          .select();
-
-        console.log('DEBUG - Resultado INSERT:', { data: insertData, error: insertError });
-
-        if (insertError) throw insertError;
-      } else if (updateError) {
-        throw updateError;
-      }
-
-      console.log('DEBUG - Salvamento concluído com sucesso');
+      await configuracoesApi.update(dadosCompletos);
 
       toast({
         title: 'Sucesso!',
         description: 'Configurações salvas com sucesso.'
       });
 
-      // Recarregar dados para confirmar
       await loadConfiguracoes();
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Não foi possível salvar as configurações.',
+        description: error.response?.data?.message || 'Não foi possível salvar as configurações.',
         variant: 'destructive'
       });
     } finally {
