@@ -17,9 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useMockData } from '@/hooks/useMockData';
 
 interface Participante {
   id: string;
@@ -31,8 +30,8 @@ interface Participante {
 }
 
 const Participantes = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { getParticipantes, getEventos } = useMockData();
   const [searchTerm, setSearchTerm] = useState('');
   const [eventoFilter, setEventoFilter] = useState('todos');
   const [participantes, setParticipantes] = useState<Participante[]>([]);
@@ -40,97 +39,28 @@ const Participantes = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Buscar eventos do organizador
-      const { data: eventosData } = await supabase
-        .from('scribia_eventos')
-        .select('id, nome_evento')
-        .eq('usuario_id', user!.id);
+      // Use mock data
+      const mockEventos = getEventos();
+      setEventos(mockEventos.map(e => ({ id: e.id, nome: e.nome })));
 
-      setEventos((eventosData || []).map(e => ({ id: e.id, nome: e.nome_evento })));
+      const mockParticipantes = getParticipantes();
+      const participantesFormatados: Participante[] = mockParticipantes.map(p => ({
+        id: p.id,
+        nome: p.nome,
+        email: p.email,
+        evento: p.evento,
+        livebooks_gerados: p.livebooks_gerados,
+        ultima_atividade: p.data_inscricao,
+      }));
 
-      const eventoIds = (eventosData || []).map(e => e.id);
-
-      if (eventoIds.length === 0) {
-        setParticipantes([]);
-        setLoading(false);
-        return;
-      }
-
-      // Buscar palestras dos eventos
-      const { data: palestrasData } = await supabase
-        .from('scribia_palestras')
-        .select('id, evento_id, usuario_id')
-        .in('evento_id', eventoIds);
-
-      const palestraIds = (palestrasData || []).map(p => p.id);
-
-      if (palestraIds.length === 0) {
-        setParticipantes([]);
-        setLoading(false);
-        return;
-      }
-
-      // Buscar livebooks com informações do usuário
-      const { data: livebooksData } = await supabase
-        .from('scribia_livebooks')
-        .select(`
-          usuario_id,
-          criado_em,
-          palestra_id,
-          scribia_palestras!inner (
-            evento_id,
-            scribia_eventos!inner (
-              nome_evento
-            )
-          )
-        `)
-        .in('palestra_id', palestraIds);
-
-      // Agrupar por usuário
-      const participantesMap = new Map<string, any>();
-
-      for (const livebook of (livebooksData || [])) {
-        const userId = livebook.usuario_id;
-        
-        if (!participantesMap.has(userId)) {
-          // Buscar dados do usuário
-          const { data: userData } = await supabase
-            .from('scribia_usuarios')
-            .select('nome_completo, email')
-            .eq('id', userId)
-            .single();
-
-          if (userData) {
-            participantesMap.set(userId, {
-              id: userId,
-              nome: userData.nome_completo,
-              email: userData.email,
-              evento: (livebook as any).scribia_palestras.scribia_eventos.nome_evento,
-              livebooks_gerados: 0,
-              ultima_atividade: livebook.criado_em,
-            });
-          }
-        }
-
-        const participante = participantesMap.get(userId);
-        if (participante) {
-          participante.livebooks_gerados++;
-          if (new Date(livebook.criado_em) > new Date(participante.ultima_atividade)) {
-            participante.ultima_atividade = livebook.criado_em;
-          }
-        }
-      }
-
-      setParticipantes(Array.from(participantesMap.values()));
+      setParticipantes(participantesFormatados);
     } catch (error: any) {
       console.error('Erro ao buscar participantes:', error);
       toast({
@@ -143,6 +73,12 @@ const Participantes = () => {
     }
   };
 
+  const filteredParticipantes = participantes.filter(participante => {
+    const matchesSearch = participante.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         participante.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEvento = eventoFilter === 'todos' || participante.evento === eventoFilter;
+    return matchesSearch && matchesEvento;
+  });
 
   const getPerfilColor = (perfil: string) => {
     switch (perfil) {
@@ -173,13 +109,6 @@ const Participantes = () => {
   const getStatusColor = (status: string) => {
     return status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
-
-  const filteredParticipantes = participantes.filter(participante => {
-    const matchesSearch = participante.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         participante.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEvento = eventoFilter === 'todos' || participante.evento === eventoFilter;
-    return matchesSearch && matchesEvento;
-  });
 
   // Estatísticas
   const totalParticipantes = participantes.length;

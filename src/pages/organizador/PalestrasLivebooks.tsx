@@ -19,9 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useMockData } from '@/hooks/useMockData';
 
 interface Palestra {
   id: string;
@@ -34,8 +33,8 @@ interface Palestra {
 }
 
 const PalestrasLivebooks = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { getPalestras, getEventos, getLivebooks } = useMockData();
   const [searchTerm, setSearchTerm] = useState('');
   const [eventoFilter, setEventoFilter] = useState('todos');
   const [palestras, setPalestras] = useState<Palestra[]>([]);
@@ -43,61 +42,36 @@ const PalestrasLivebooks = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Buscar eventos do organizador
-      const { data: eventosData } = await supabase
-        .from('scribia_eventos')
-        .select('id, nome_evento')
-        .eq('usuario_id', user!.id);
+      // Use mock data
+      const mockEventos = getEventos();
+      setEventos(mockEventos.map(e => ({ id: e.id, nome: e.nome })));
 
-      setEventos((eventosData || []).map(e => ({ id: e.id, nome: e.nome_evento })));
+      const mockPalestras = getPalestras();
+      const mockLivebooks = getLivebooks();
 
-      // Buscar palestras com evento e contagem de livebooks
-      const { data: palestrasData } = await supabase
-        .from('scribia_palestras')
-        .select(`
-          id,
-          titulo,
-          palestrante,
-          criado_em,
-          tags_tema,
-          scribia_eventos!inner (
-            nome_evento,
-            usuario_id
-          )
-        `)
-        .eq('scribia_eventos.usuario_id', user!.id)
-        .order('criado_em', { ascending: false });
+      const palestrasFormatadas: Palestra[] = mockPalestras.map(p => {
+        const evento = mockEventos.find(e => e.id === p.evento_id);
+        const livebooksCount = mockLivebooks.filter(l => l.palestra_id === p.id).length;
 
-      // Contar livebooks por palestra
-      const palestrasComStats = await Promise.all(
-        (palestrasData || []).map(async (palestra: any) => {
-          const { count } = await supabase
-            .from('scribia_livebooks')
-            .select('*', { count: 'exact', head: true })
-            .eq('palestra_id', palestra.id);
+        return {
+          id: p.id,
+          titulo: p.titulo,
+          palestrante: p.palestrante_nome || 'Não informado',
+          evento_nome: evento?.nome || 'Evento não encontrado',
+          livebooks_gerados: livebooksCount,
+          data_palestra: p.data_hora || new Date().toISOString(),
+          tags_tema: [],
+        };
+      });
 
-          return {
-            id: palestra.id,
-            titulo: palestra.titulo,
-            palestrante: palestra.palestrante || 'Não informado',
-            evento_nome: palestra.scribia_eventos.nome_evento,
-            livebooks_gerados: count || 0,
-            data_palestra: palestra.criado_em,
-            tags_tema: palestra.tags_tema || [],
-          };
-        })
-      );
-
-      setPalestras(palestrasComStats);
+      setPalestras(palestrasFormatadas);
     } catch (error: any) {
       console.error('Erro ao buscar dados:', error);
       toast({
@@ -109,7 +83,6 @@ const PalestrasLivebooks = () => {
       setLoading(false);
     }
   };
-
 
   const categorias = Array.from(new Set(palestras.flatMap(p => p.tags_tema)));
 

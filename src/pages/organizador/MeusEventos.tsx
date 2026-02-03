@@ -21,10 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useMockData } from '@/hooks/useMockData';
 
 interface Evento {
   id: string;
@@ -41,100 +40,38 @@ interface Evento {
 }
 
 const MeusEventos = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { getEventos } = useMockData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchEventos();
-    }
-  }, [user]);
+    fetchEventos();
+  }, []);
 
   const fetchEventos = async () => {
     try {
       setLoading(true);
       
-      // Buscar eventos
-      const { data: eventosData, error: eventosError } = await supabase
-        .from('scribia_eventos')
-        .select('*')
-        .eq('usuario_id', user!.id)
-        .order('data_inicio', { ascending: false });
-
-      if (eventosError) throw eventosError;
-
-      // Para cada evento, buscar estatísticas
-      const eventosComStats = await Promise.all(
-        (eventosData || []).map(async (evento) => {
-          // Contar palestras
-          const { count: palestrasCount } = await supabase
-            .from('scribia_palestras')
-            .select('*', { count: 'exact', head: true })
-            .eq('evento_id', evento.id);
-
-          // Contar livebooks através das palestras
-          const { data: palestras } = await supabase
-            .from('scribia_palestras')
-            .select('id')
-            .eq('evento_id', evento.id);
-
-          const palestraIds = (palestras || []).map(p => p.id);
-          
-          let livebooksCount = 0;
-          let participantesCount = 0;
-
-          if (palestraIds.length > 0) {
-            const { count: lbCount } = await supabase
-              .from('scribia_livebooks')
-              .select('*', { count: 'exact', head: true })
-              .in('palestra_id', palestraIds);
-
-            livebooksCount = lbCount || 0;
-
-            // Contar participantes únicos (usuários que geraram livebooks)
-            const { data: livebooks } = await supabase
-              .from('scribia_livebooks')
-              .select('usuario_id')
-              .in('palestra_id', palestraIds);
-
-            const uniqueUsers = new Set((livebooks || []).map(lb => lb.usuario_id));
-            participantesCount = uniqueUsers.size;
-          }
-
-          // Determinar status baseado na data
-          const now = new Date();
-          const dataInicio = new Date(evento.data_inicio);
-          const dataFim = evento.data_fim ? new Date(evento.data_fim) : dataInicio;
-          
-          let status = 'Agendado';
-          if (now >= dataInicio && now <= dataFim) {
-            status = 'Em andamento';
-          } else if (now > dataFim) {
-            status = 'Concluído';
-          }
-
-          return {
-            id: evento.id,
-            nome_evento: evento.nome_evento,
-            data_inicio: evento.data_inicio,
-            data_fim: evento.data_fim || evento.data_inicio,
-            cidade: evento.cidade || '',
-            estado: evento.estado || '',
-            pais: evento.pais || 'Brasil',
-            status,
-            participantes: participantesCount,
-            livebooks: livebooksCount,
-            palestras: palestrasCount || 0,
-          };
-        })
-      );
-
-      setEventos(eventosComStats);
+      const mockEventos = getEventos();
+      const eventosFormatados: Evento[] = mockEventos.map(evt => ({
+        id: evt.id,
+        nome_evento: evt.nome,
+        data_inicio: evt.data_inicio,
+        data_fim: evt.data_fim || evt.data_inicio,
+        cidade: evt.local?.split(',')[0] || 'São Paulo',
+        estado: 'SP',
+        pais: 'Brasil',
+        status: evt.status === 'ativo' ? 'Em andamento' : 'Agendado',
+        participantes: evt.total_participantes || 0,
+        livebooks: evt.total_palestras || 0,
+        palestras: evt.total_palestras || 0,
+      }));
+      
+      setEventos(eventosFormatados);
     } catch (error: any) {
       console.error('Erro ao buscar eventos:', error);
       toast({
@@ -146,58 +83,6 @@ const MeusEventos = () => {
       setLoading(false);
     }
   };
-
-  // Mock data substituído por dados reais acima
-  const mockEventos = [
-    {
-      id: 1,
-      nome: 'Congresso de Obstetrícia 2024',
-      periodo: '15-17 Mar 2024',
-      local: 'São Paulo, SP, Brasil',
-      status: 'Em andamento',
-      participantes: 245,
-      livebooks: 89,
-      palestras: 12,
-      statusColor: 'bg-green-100 text-green-800 border-green-200',
-      statusIcon: '🟢'
-    },
-    {
-      id: 2,
-      nome: 'Simpósio de Medicina Fetal',
-      periodo: '22-24 Mar 2024',
-      local: 'Rio de Janeiro, RJ, Brasil',
-      status: 'Agendado',
-      participantes: 180,
-      livebooks: 0,
-      palestras: 8,
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-200',
-      statusIcon: '🔵'
-    },
-    {
-      id: 3,
-      nome: 'Workshop de Ultrassonografia',
-      periodo: '10-12 Mar 2024',
-      local: 'Belo Horizonte, MG, Brasil',
-      status: 'Concluído',
-      participantes: 95,
-      livebooks: 34,
-      palestras: 6,
-      statusColor: 'bg-gray-100 text-gray-800 border-gray-200',
-      statusIcon: '⚪'
-    },
-    {
-      id: 4,
-      nome: 'Curso de Parto Humanizado',
-      periodo: '28-30 Mar 2024',
-      local: 'Brasília, DF, Brasil',
-      status: 'Agendado',
-      participantes: 120,
-      livebooks: 0,
-      palestras: 10,
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-200',
-      statusIcon: '🔵'
-    }
-  ];
 
   const filteredEventos = eventos.filter(evento => {
     const local = `${evento.cidade}, ${evento.estado}, ${evento.pais}`;
