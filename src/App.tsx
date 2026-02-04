@@ -28,6 +28,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DashboardHome = lazy(() => import("./pages/dashboard/Dashboard"));
 const Events = lazy(() => import("./pages/dashboard/Events"));
 const Livebooks = lazy(() => import("./pages/dashboard/Livebooks"));
+const Bia = lazy(() => import("./pages/dashboard/Bia"));
 const EventosDashboard = lazy(() => import("./pages/dashboard/EventosDashboard"));
 const PatrocinadorDashboard = lazy(() => import("./pages/dashboard/PatrocinadorDashboard"));
 const PalestranteDashboard = lazy(() => import("./pages/dashboard/PalestranteDashboard"));
