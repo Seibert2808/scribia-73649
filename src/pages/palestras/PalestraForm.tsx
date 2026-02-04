@@ -161,6 +161,7 @@ const PalestraForm = () => {
           palestrante: formData.palestrante || null,
           data_hora_inicio: formData.data_hora_inicio || null,
           informacoes_adicionais: formData.informacoes_adicionais || null,
+          tags_tema: formData.tags_tema,
         })
       });
 
