@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, AlertTriangle, Download, FileText } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { livebooksApi } from '@/services/api';
 import { toast } from 'sonner';
 import type { StatusLivebook } from '@/types/livebook';
 
@@ -47,32 +47,25 @@ export function LivebookProgress({ palestraId, userId, onComplete }: LivebookPro
         setAttemptCount(currentAttempt);
         console.log(`🔄 Tentativa ${currentAttempt} - Buscando livebook para palestra:`, palestraId);
 
-        const { data, error } = await supabase.rpc('scribia_get_livebook_by_palestra', {
-          p_palestra_id: palestraId,
-          p_usuario_id: userId
-        });
+        const response = await livebooksApi.getByPalestra(palestraId);
+        const livebooks = response.data.data || response.data;
 
-        if (error) {
-          console.error('❌ Erro ao buscar livebook:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
+        if (livebooks && livebooks.length > 0) {
           const livebookData = {
-            id: data[0].id,
-            status: data[0].status as StatusLivebook,
-            pdf_url: data[0].pdf_url,
-            html_url: data[0].html_url,
-            docx_url: data[0].docx_url,
-            tipo_resumo: data[0].tipo_resumo,
-            erro_log: data[0].erro_log,
+            id: livebooks[0].id,
+            status: livebooks[0].status as StatusLivebook,
+            pdf_url: livebooks[0].pdf_url,
+            html_url: livebooks[0].html_url,
+            docx_url: livebooks[0].docx_url,
+            tipo_resumo: livebooks[0].tipo_resumo,
+            erro_log: livebooks[0].erro_log,
             palestra: {
-              titulo: data[0].titulo,
-              palestrante: data[0].palestrante
+              titulo: livebooks[0].titulo_palestra || livebooks[0].titulo,
+              palestrante: livebooks[0].palestrante
             }
           } as LivebookData;
           
-          console.log('✅ Livebook encontrado via RPC:', livebookData.id, 'Status:', livebookData.status);
+          console.log('✅ Livebook encontrado:', livebookData.id, 'Status:', livebookData.status);
           setLivebook(livebookData);
           setLoading(false);
           setWaitingForCreation(false);

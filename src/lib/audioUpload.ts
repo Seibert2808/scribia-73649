@@ -72,24 +72,54 @@ export async function uploadAudioToTranscribe(
   console.log('🔗 URL autenticada gerada (válida por 24h)');
   if (onProgress) onProgress(60);
 
-  // 3. Chamar edge function com URL (não arquivo)
-  console.log('🎙️ Iniciando transcrição via Deepgram (URL remota)...');
-
-  const { data: result, error: invokeError } = await supabase.functions.invoke<{
-    success?: boolean;
-    message?: string;
-    transcription_url?: string;
-  }>('scribia-transcribe', {
-    body: {
-      audio_url: signedUrlData.signedUrl,
-      palestra_id: palestraId,
-      user_id: userId,
-    },
-  });
-
-  if (invokeError) {
-    console.error('❌ Erro na transcrição:', invokeError);
-    throw new Error(`Erro na transcrição: ${invokeError.message || 'Falha ao iniciar transcrição'}`);
+  // 3. Mock de transcrição (simulação)
+  console.log('🎙️ Simulando transcrição...');
+  
+  // Simular delay de processamento
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Criar livebook mockado via API com URLs de documentos
+  try {
+    const response = await fetch('http://localhost:3000/api/v1/livebooks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+      body: JSON.stringify({
+        palestra_id: palestraId,
+        tipo_resumo: 'completo',
+        status: 'concluido',
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao criar livebook');
+    }
+    
+    const result = await response.json();
+    const livebookId = result.data?.id || result.id;
+    
+    // Atualizar livebook com URLs mockadas
+    if (livebookId) {
+      await fetch(`http://localhost:3000/api/v1/livebooks/${livebookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({
+          pdf_url: `https://example.com/livebooks/${livebookId}.pdf`,
+          docx_url: `https://example.com/livebooks/${livebookId}.docx`,
+          html_url: `https://example.com/livebooks/${livebookId}.html`,
+        }),
+      });
+    }
+    
+    console.log('✅ Livebook criado com sucesso (mock)');
+  } catch (error) {
+    console.error('❌ Erro ao criar livebook:', error);
+    throw error;
   }
 
   if (onProgress) onProgress(100);
@@ -97,6 +127,6 @@ export async function uploadAudioToTranscribe(
 
   return {
     success: true,
-    message: result?.message || 'Transcrição em andamento',
+    message: 'Transcrição concluída (mock)',
   };
 }

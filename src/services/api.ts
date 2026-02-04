@@ -57,6 +57,13 @@ export const eventosApi = {
   getEstatisticas: (id: string) => api.get(`/eventos/${id}/estatisticas`),
 };
 
+// Palestras
+export const palestrasApi = {
+  create: (data: any) => api.post('/palestras', data),
+  get: (id: string) => api.get(`/palestras/${id}`),
+  getStatus: (id: string) => api.get(`/palestras/${id}/status`),
+};
+
 // Livebooks
 export const livebooksApi = {
   list: () => api.get('/livebooks'),
@@ -64,6 +71,7 @@ export const livebooksApi = {
   create: (data: any) => api.post('/livebooks', data),
   getOpcoes: (palestraId: string) => api.get(`/livebooks/palestra/${palestraId}/opcoes`),
   getDownloadUrl: (id: string, formato: string) => api.get(`/livebooks/${id}/download/${formato}`),
+  getByPalestra: (palestraId: string) => api.get(`/livebooks/palestra/${palestraId}`),
 };
 
 // Configurações

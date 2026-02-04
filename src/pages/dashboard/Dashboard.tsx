@@ -74,15 +74,17 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         const response = await dashboardApi.getInicio();
-        const statsData = response.data;
+        // Backend retorna { statusCode, message, data: { estatisticas, eventos_recentes, ... } }
+        const backendData = response.data.data || response.data;
+        const stats = backendData.estatisticas || backendData;
         
         setStats({
-          totalEventos: statsData.total_eventos || 0,
-          totalPalestras: statsData.total_palestras || 0,
-          totalLivebooks: statsData.total_livebooks || 0,
-          livebooksConcluidos: statsData.livebooks_concluidos || 0,
-          eventos_recentes: statsData.eventos_recentes || [],
-          livebooks_recentes: statsData.livebooks_recentes || []
+          totalEventos: stats.total_eventos || 0,
+          totalPalestras: stats.total_palestras || 0,
+          totalLivebooks: stats.total_livebooks || 0,
+          livebooksConcluidos: stats.livebooks_concluidos || 0,
+          eventos_recentes: backendData.eventos_recentes || [],
+          livebooks_recentes: backendData.livebooks_recentes || []
         });
       } catch (error: any) {
         console.error('Erro ao buscar estatísticas:', error);
@@ -139,21 +141,17 @@ const Dashboard = () => {
       const userId = customUser.profile.id;
       
       try {
-        // Recarregar todas as stats via RPC
-        const { data, error } = await supabase.rpc('scribia_get_dashboard_stats', {
-          p_user_id: userId
-        });
-
-        if (error) throw error;
+        // Recarregar stats via backend
+        const response = await dashboardApi.getInicio();
+        const data = response.data.data || response.data;
         
-        const statsData = data as any;
         setStats({
-          totalEventos: statsData.total_eventos || 0,
-          totalPalestras: statsData.total_palestras || 0,
-          totalLivebooks: statsData.total_livebooks || 0,
-          livebooksConcluidos: statsData.livebooks_concluidos || 0,
-          eventos_recentes: statsData.eventos_recentes || [],
-          livebooks_recentes: statsData.livebooks_recentes || []
+          totalEventos: data.estatisticas?.total_eventos || 0,
+          totalPalestras: data.estatisticas?.total_palestras || 0,
+          totalLivebooks: data.estatisticas?.total_livebooks || 0,
+          livebooksConcluidos: data.estatisticas?.livebooks_concluidos || 0,
+          eventos_recentes: data.eventos_recentes || [],
+          livebooks_recentes: data.livebooks_recentes || []
         });
       } catch (error) {
         console.error('Erro ao atualizar estatísticas:', error);
