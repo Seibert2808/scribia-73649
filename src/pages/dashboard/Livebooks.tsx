@@ -61,10 +61,10 @@ const Livebooks = () => {
         setLoading(true);
         
         const response = await livebooksApi.list();
-        const data = response.data;
-        const livebooksData = Array.isArray(data) ? data : [];
+        const backendData = response.data.data || response.data;
+        const livebooksData = backendData.livebooks || [];
         
-        setLivebooks(livebooksData);
+        setLivebooks(Array.isArray(livebooksData) ? livebooksData : []);
       } catch (err: any) {
         console.error('Erro ao buscar livebooks:', err);
         setError(err.response?.data?.message || err.message);
@@ -140,17 +140,17 @@ const Livebooks = () => {
   };
 
   const handleDownloadPdf = async (livebook: any) => {
-    if (!livebook.pdf_url) {
-      toast({
-        title: "Erro",
-        description: "PDF não disponível",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      const response = await fetch(livebook.pdf_url);
+      const response = await fetch(`http://localhost:3000/api/v1/livebooks/${livebook.id}/download/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao baixar arquivo');
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -163,35 +163,35 @@ const Livebooks = () => {
 
       toast({
         title: "Download iniciado",
-        description: "O PDF está sendo baixado",
+        description: "O arquivo está sendo baixado",
       });
     } catch (error) {
       console.error('Erro ao fazer download:', error);
       toast({
         title: "Erro no download",
-        description: "Não foi possível baixar o PDF",
+        description: "Não foi possível baixar o arquivo",
         variant: "destructive",
       });
     }
   };
 
   const handleDownloadTxt = async (livebook: any) => {
-    if (!livebook.docx_url) {
-      toast({
-        title: "Erro",
-        description: "Arquivo TXT não disponível",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      const response = await fetch(livebook.docx_url);
+      const response = await fetch(`http://localhost:3000/api/v1/livebooks/${livebook.id}/download/txt`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao baixar arquivo');
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Livebook_${livebook.palestra?.titulo || 'ScribIA'}.txt`;
+      a.download = `Livebook_${livebook.palestra?.titulo || 'ScribIA'}_completo.txt`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

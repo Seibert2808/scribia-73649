@@ -73,6 +73,8 @@ export function QuickLivebookModal({ open, onOpenChange, onPalestraCreated, even
       const nivel = nivelEscolhido;
       const formato = formatoEscolhido;
 
+      console.log('🎬 Criando palestra:', { titulo, palestrante, nivel, formato });
+
       const response = await palestrasApi.create({
         evento_id: eventoId || null,
         titulo: titulo || "Livebook Geral",
@@ -84,9 +86,11 @@ export function QuickLivebookModal({ open, onOpenChange, onPalestraCreated, even
       });
 
       const palestra = response.data.data || response.data;
+      console.log('✅ Palestra criada:', palestra.id);
       return palestra.id;
     } catch (error: any) {
-      console.error("Erro ao criar palestra:", error);
+      console.error("❌ Erro ao criar palestra:", error);
+      console.error("Response:", error.response?.data);
       toast.error(error.response?.data?.message || error.message || "Não foi possível criar palestra");
       return null;
     }

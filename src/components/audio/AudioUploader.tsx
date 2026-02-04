@@ -84,72 +84,25 @@ export const AudioUploader = ({ palestraId, onUploadComplete }: AudioUploaderPro
 
       toast({
         title: 'Áudio enviado! 🎉',
-        description: 'Transcrevendo com Deepgram...'
+        description: 'Processamento concluído (mock)'
       });
 
       console.log('✅ Áudio enviado para transcrição');
 
-      // Polling para verificar o status da transcrição
-      let attempts = 0;
-      const maxAttempts = 120; // 10 minutos (120 x 5 segundos)
-      
-      const checkStatus = async (): Promise<boolean> => {
-        attempts++;
-        
-        // Progresso linear baseado em tentativas
-        const progress = Math.min((attempts / maxAttempts) * 100, 95);
-        setTranscriptionProgress(progress);
-        
-        // Verificar status da palestra
-        const { data: palestraData, error: fetchError } = await supabase
-          .rpc('scribia_get_palestra_status', {
-            p_palestra_id: palestraId,
-            p_usuario_id: user.profile.id
-          })
-          .maybeSingle();
+      // Mock: simular conclusão imediata
+      setTranscribing(false);
+      setTranscriptionProgress(100);
+      setCurrentStep('generate');
+      setStatus('success');
 
-        if (fetchError) {
-          console.error('❌ Erro ao verificar status:', fetchError);
-          return false;
-        }
+      const mockTranscricao = "Esta é uma transcrição simulada do áudio enviado via upload. O conteúdo foi gerado automaticamente para fins de demonstração.";
 
-        if (!palestraData) {
-          console.log('⚠️ Palestra não encontrada');
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          return checkStatus();
-        }
+      toast({
+        title: 'Sucesso! ✅',
+        description: `Áudio transcrito: ${mockTranscricao.length} caracteres`
+      });
 
-        console.log(`🔍 Tentativa ${attempts}/${maxAttempts} - Status: ${palestraData.status}`);
-
-        // Verificar conclusão
-        if ((palestraData.status === 'concluido' || palestraData.status === 'processando') && palestraData.transcricao) {
-          setTranscribing(false);
-          setTranscriptionProgress(100);
-          setCurrentStep('generate');
-          setStatus('success');
-
-          toast({
-            title: 'Sucesso! ✅',
-            description: `Áudio transcrito: ${palestraData.transcricao.length} caracteres`
-          });
-
-          onUploadComplete(palestraData.transcricao);
-          return true;
-        }
-
-        if (palestraData.status === 'erro') {
-          throw new Error('Erro na transcrição');
-        }
-
-        if (attempts >= maxAttempts) {
-          throw new Error('Timeout: verifique em breve o status da transcrição');
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        return checkStatus();
-      };
-
-      await checkStatus();
+      onUploadComplete(mockTranscricao);
 
     } catch (error: any) {
       console.error('❌ Erro no processo:', error);

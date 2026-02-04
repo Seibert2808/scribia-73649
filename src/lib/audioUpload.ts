@@ -74,9 +74,42 @@ export async function uploadAudioToTranscribe(
 
   // 3. Mock de transcrição (simulação)
   console.log('🎙️ Simulando transcrição...');
+  console.log('📋 Palestra ID recebido:', palestraId);
+  console.log('👤 User ID:', userId);
   
   // Simular delay de processamento
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Criar palestra nova (o palestraId recebido é apenas um UUID temporário)
+  let realPalestraId = palestraId;
+  try {
+    console.log('🎬 Criando palestra...');
+    const createPalestraResponse = await fetch('http://localhost:3000/api/v1/palestras', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+      body: JSON.stringify({
+        titulo: 'Livebook via Upload',
+        palestrante: 'Não informado',
+        status: 'planejada',
+        origem_classificacao: 'manual',
+      }),
+    });
+    
+    if (createPalestraResponse.ok) {
+      const palestraData = await createPalestraResponse.json();
+      realPalestraId = palestraData.data?.id || palestraData.id;
+      console.log('✅ Palestra criada:', realPalestraId);
+    } else {
+      console.error('❌ Erro ao criar palestra');
+      throw new Error('Erro ao criar palestra');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao criar palestra:', error);
+    throw error;
+  }
   
   // Criar livebook mockado via API com URLs de documentos
   try {
@@ -87,7 +120,7 @@ export async function uploadAudioToTranscribe(
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
       },
       body: JSON.stringify({
-        palestra_id: palestraId,
+        palestra_id: realPalestraId,
         tipo_resumo: 'completo',
         status: 'concluido',
       }),
