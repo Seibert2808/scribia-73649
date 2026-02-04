@@ -23,7 +23,6 @@ const EsqueciSenha = lazy(() => import("./pages/EsqueciSenha"));
 const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
 const VerificarEmail = lazy(() => import("./pages/VerificarEmail"));
 const SelecionarTipoConta = lazy(() => import("./pages/SelecionarTipoConta"));
-const DefinirPerfil = lazy(() => import("./pages/DefinirPerfil"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DashboardHome = lazy(() => import("./pages/dashboard/Dashboard"));
 const Events = lazy(() => import("./pages/dashboard/Events"));
@@ -90,11 +89,6 @@ const App = () => (
                   <Route path="/selecionar-tipo-conta" element={
                     <AuthGuard>
                       <SelecionarTipoConta />
-                    </AuthGuard>
-                  } />
-                  <Route path="/definir-perfil" element={
-                    <AuthGuard>
-                      <DefinirPerfil />
                     </AuthGuard>
                   } />
                   <Route path="/dashboard/*" element={

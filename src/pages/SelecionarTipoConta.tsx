@@ -106,7 +106,7 @@ const SelecionarTipoConta = () => {
             break;
           case 'participante_evento':
           case 'usuario_individual':
-            navigate('/definir-perfil');
+            navigate('/dashboard');
             break;
           default:
             navigate('/dashboard');

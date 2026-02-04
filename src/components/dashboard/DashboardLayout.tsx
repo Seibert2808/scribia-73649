@@ -32,13 +32,6 @@ const DashboardLayout = () => {
 
   // Verificar se o perfil foi definido
   useEffect(() => {
-    // Criar variável separada para melhorar detecção de mudanças
-    const perfilDefinido = user?.profile?.perfil_definido;
-    
-    if (!loading && user && perfilDefinido === false) {
-      console.log('🔄 Redirecionando para definir perfil');
-      navigate('/definir-perfil', { replace: true });
-    }
   }, [loading, user, user?.profile, user?.profile?.perfil_definido, navigate]);
 
   if (loading) {

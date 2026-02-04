@@ -63,16 +63,8 @@ export default function Login() {
           }
         }
         
-        console.log('⚠️ No roles found, checking needsProfile...');
-        
-        // Só chega aqui se não tiver role
-        if (result.needsProfile) {
-          console.log('🚀 Navigating to /definir-perfil...');
-          navigate("/definir-perfil", { replace: true });
-        } else {
-          console.log('🚀 Navigating to /dashboard (fallback)...');
-          navigate("/dashboard", { replace: true });
-        }
+        console.log('⚠️ No roles found, redirecting to dashboard...');
+        navigate("/dashboard", { replace: true });
       } else {
         console.log('❌ Login failed:', result.error);
         setError(result.error || "Erro ao fazer login");

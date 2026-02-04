@@ -358,61 +358,6 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Seção de Perfil de Aprendizado */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-yellow-600" />
-            Seu Perfil de Aprendizado
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {customUser?.profile?.perfil_definido ? (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-200">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    {getPerfilLabel(customUser.profile.nivel_preferido, customUser.profile.formato_preferido)}
-                  </h3>
-                  <p className="text-gray-700 mb-3">
-                    {getPerfilDescription(customUser.profile.nivel_preferido, customUser.profile.formato_preferido)}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span>✓ Nível: {customUser.profile.nivel_preferido}</span>
-                    <span>✓ Formato: {customUser.profile.formato_preferido}</span>
-                  </div>
-                </div>
-                <a href="/definir-perfil">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Brain className="h-4 w-4" />
-                    Redefinir Perfil
-                  </Button>
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Defina seu Perfil de Aprendizado
-                  </h3>
-                  <p className="text-gray-700 mb-3">
-                    Personalize seus Livebooks de acordo com seu nível de conhecimento e preferências.
-                  </p>
-                </div>
-                <a href="/definir-perfil">
-                  <Button size="sm" className="flex items-center gap-2">
-                    <Brain className="h-4 w-4" />
-                    Definir Perfil
-                  </Button>
-                </a>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Cards de Agentes IA */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bia - Análise de Perfil */}

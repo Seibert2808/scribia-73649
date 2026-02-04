@@ -242,15 +242,6 @@ const GerarLivebook = () => {
       });
       return;
     }
-    
-    if (!userPerfil) {
-      toast({
-        title: "Erro",
-        description: "Perfil de aprendizado não encontrado. Por favor, defina seu perfil nas configurações.",
-        variant: "destructive"
-      });
-      return;
-    }
 
     if (relacionarEvento && (!eventoId || !palestraSelecionada)) {
       toast({
@@ -289,7 +280,7 @@ const GerarLivebook = () => {
         body: JSON.stringify({
           palestra_id: currentPalestraId,
           titulo: titulo,
-          tipo_resumo: userPerfil.includes('compacto') ? 'executivo' : 'completo',
+          tipo_resumo: 'completo',
         })
       });
 
