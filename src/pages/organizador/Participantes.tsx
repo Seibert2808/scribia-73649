@@ -51,10 +51,10 @@ const Participantes = () => {
       ]);
 
       const participantesData = participantesRes.data || [];
-      const eventosData = eventosRes.data || [];
+      const eventosData = eventosRes.data?.data?.eventos || eventosRes.data?.eventos || eventosRes.data || [];
 
-      setEventos(eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })));
-      setParticipantes(participantesData);
+      setEventos(Array.isArray(eventosData) ? eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })) : []);
+      setParticipantes(Array.isArray(participantesData) ? participantesData : []);
     } catch (error: any) {
       console.error('Erro ao buscar participantes:', error);
       toast({
@@ -67,12 +67,12 @@ const Participantes = () => {
     }
   };
 
-  const filteredParticipantes = participantes.filter(participante => {
+  const filteredParticipantes = Array.isArray(participantes) ? participantes.filter(participante => {
     const matchesSearch = participante.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          participante.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEvento = eventoFilter === 'todos' || participante.evento === eventoFilter;
     return matchesSearch && matchesEvento;
-  });
+  }) : [];
 
   const totalParticipantes = participantes.length;
   const totalLivebooks = participantes.reduce((sum, p) => sum + p.livebooks_gerados, 0);

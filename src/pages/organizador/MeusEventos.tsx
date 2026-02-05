@@ -45,10 +45,12 @@ const MeusEventos = () => {
     try {
       setLoading(true);
       const response = await eventosApi.list();
-      const eventosData = response.data;
+      console.log('Response eventos:', response);
+      const eventosData = response.data?.data?.eventos || response.data?.eventos || response.data || [];
+      console.log('Eventos data:', eventosData);
 
       const eventosComStats = await Promise.all(
-        (eventosData || []).map(async (evento: any) => {
+        (Array.isArray(eventosData) ? eventosData : []).map(async (evento: any) => {
           try {
             const statsResponse = await eventosApi.getEstatisticas(evento.id);
             const stats = statsResponse.data;

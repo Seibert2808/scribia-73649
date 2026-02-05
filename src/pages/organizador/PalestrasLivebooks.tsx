@@ -56,14 +56,14 @@ const PalestrasLivebooks = () => {
       ]);
 
       const livebooksData = livebooksRes.data || [];
-      const eventosData = eventosRes.data || [];
+      const eventosData = eventosRes.data?.data?.eventos || eventosRes.data?.eventos || eventosRes.data || [];
 
-      setEventos(eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })));
+      setEventos(Array.isArray(eventosData) ? eventosData.map((e: any) => ({ id: e.id, nome: e.nome_evento })) : []);
 
       // Agrupar livebooks por palestra
       const palestrasMap = new Map<string, Palestra>();
       
-      livebooksData.forEach((livebook: any) => {
+      (Array.isArray(livebooksData) ? livebooksData : []).forEach((livebook: any) => {
         const palestraId = livebook.palestra_id;
         
         if (!palestrasMap.has(palestraId)) {
