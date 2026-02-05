@@ -12,6 +12,7 @@ import OrganizadorDashboard from '@/pages/organizador/OrganizadorDashboard';
 
 // Importar páginas do organizador
 import MeusEventos from '@/pages/organizador/MeusEventos';
+import CriarEvento from '@/pages/organizador/CriarEvento';
 import Participantes from '@/pages/organizador/Participantes';
 import PalestrasLivebooks from '@/pages/organizador/PalestrasLivebooks';
 import RankingsTendencias from '@/pages/organizador/RankingsTendencias';
@@ -70,6 +71,7 @@ const OrganizadorLayout = () => {
             <Route index element={<OrganizadorDashboard />} />
             <Route path="dashboard" element={<OrganizadorDashboard />} />
             <Route path="eventos" element={<MeusEventos />} />
+            <Route path="criar-evento" element={<CriarEvento />} />
             <Route path="participantes" element={<Participantes />} />
             <Route path="palestras-livebooks" element={<PalestrasLivebooks />} />
             <Route path="rankings" element={<RankingsTendencias />} />

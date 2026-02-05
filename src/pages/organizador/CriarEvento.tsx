@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,25 +29,10 @@ const CriarEvento = () => {
   });
 
   useEffect(() => {
-    const fetchOrganizador = async () => {
-      if (!user) return;
-
-      const { data } = await supabase
-        .from('scribia_organizadores' as any)
-        .select('id')
-        .eq('user_id', user.profile.id)
-        .maybeSingle();
-
-      if (data) {
-        setOrganizadorId((data as any).id);
-      } else {
-        toast.error('Você precisa completar seu cadastro de organizador primeiro');
-        navigate('/organizador/cadastro');
-      }
-    };
-
-    fetchOrganizador();
-  }, [user, navigate]);
+    if (user?.profile?.id) {
+      setOrganizadorId(user.profile.id);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +41,13 @@ const CriarEvento = () => {
     setLoading(true);
 
     try {
-      const { data: eventoData, error: eventoError } = await supabase
-        .from('scribia_eventos')
-        .insert({
-          organizador_id: organizadorId,
-          usuario_id: user!.profile.id,
+      const response = await fetch('http://localhost:3000/api/v1/eventos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
           nome_evento: formData.nome_evento,
           data_inicio: formData.data_inicio_evento || null,
           data_fim: formData.data_fim_evento || null,
@@ -72,15 +58,19 @@ const CriarEvento = () => {
           tipo_evento: formData.tipo_evento || null,
           url_evento: formData.url_evento || null,
           logo_url: formData.logo_url || null,
-          status_evento: 'ativo'
         })
-        .select()
-        .single();
+      });
 
-      if (eventoError) throw eventoError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao criar evento');
+      }
+
+      const responseData = await response.json();
+      const evento = responseData.data || responseData;
 
       toast.success('Evento criado com sucesso!');
-      navigate(`/organizador/dashboard/${eventoData.id}`);
+      navigate('/organizador/eventos');
     } catch (error: any) {
       console.error('Erro ao criar evento:', error);
       toast.error('Erro ao criar evento. Tente novamente.');

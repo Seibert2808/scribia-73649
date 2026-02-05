@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCustomAuth } from '@/hooks/useCustomAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface OrganizadorHeaderProps {
   onOpenTutor: () => void;
@@ -12,6 +13,7 @@ interface OrganizadorHeaderProps {
 
 const OrganizadorHeader = ({ onOpenTutor, isMobile = false }: OrganizadorHeaderProps) => {
   const { user } = useCustomAuth();
+  const navigate = useNavigate();
 
   return (
     <header className={`fixed top-0 right-0 ${isMobile ? 'left-0' : 'left-64'} h-16 bg-card border-b shadow-sm z-30`}>
@@ -45,7 +47,11 @@ const OrganizadorHeader = ({ onOpenTutor, isMobile = false }: OrganizadorHeaderP
           <div className="flex items-center gap-2">
             {!isMobile && (
               <>
-                <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  onClick={() => navigate('/organizador/criar-evento')}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Evento
                 </Button>

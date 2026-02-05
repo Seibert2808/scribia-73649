@@ -134,17 +134,12 @@ export function useCustomAuth() {
   };
 
   const logout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error('Erro no logout:', error);
-    } finally {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('scribia_user');
-      setUser(null);
-      setUserType(null);
-      navigate('/login');
-    }
+    // Logout é apenas client-side, não precisa chamar backend
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('scribia_user');
+    setUser(null);
+    setUserType(null);
+    navigate('/login');
   };
 
   const setUserRoleAndEvent = (role: UserType, eventoAssociado?: string) => {
